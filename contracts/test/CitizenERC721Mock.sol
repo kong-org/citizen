@@ -8,9 +8,9 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import "./extensions/ERC721PhysicalUpgradeable.sol";
+import "./../extensions/ERC721PhysicalUpgradeable.sol";
 
-contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721PhysicalUpgradeable, ERC721BurnableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
+contract CitizenERC721Mock is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721PhysicalUpgradeable, ERC721BurnableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -20,6 +20,7 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
 
     // Allow the baseURI to be updated.
     string private _baseUpdateableURI;
+    string public constant MOCK_UP = "mock_updated";
 
     event UpdateBaseURI(string baseURI);
 
@@ -35,29 +36,26 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         _setupRole(MINTER_ROLE, msg.sender);
         _setupRole(UPGRADER_ROLE, msg.sender);
         _setupRole(DEVICE_ROLE, msg.sender);
+
+        // TODO Device Merkle Root: we would add this to the constructor if non upgradeable.
+        // TODO Registry contract
+
     }
 
-    // Allow minters to mint, increment counter. NOTE: it may be desirable to mint the token with device information in one shot.
+    // Allow minters to mint, increment counter.
     function mint(address to) public onlyRole(MINTER_ROLE) {
-        require(block.timestamp > 1631714400, "Cannot mint yet.");
         _safeMint(to, _tokenIdCounter.current());
         _tokenIdCounter.increment();
     }
 
-    /**
-     * @dev Device specific functions.
-     */
     function setRegistryAddress(address registryAddress) public onlyRole(DEVICE_ROLE) {
         _setRegistryAddress(registryAddress);
     }
 
-    function setDevice(uint256 tokenId, string memory publicKeyHash, string memory merkleRoot) public onlyRole(DEVICE_ROLE) {
+    function setDeviceId(uint256 tokenId, string memory publicKeyHash, string memory merkleRoot) public onlyRole(DEVICE_ROLE) {
         _setDevice(tokenId, publicKeyHash, merkleRoot);
     }
 
-    /**
-     * @dev Override baseURI to modify.
-     */
     function _baseURI() internal view virtual override returns (string memory) {
         return _baseUpdateableURI;
     }
