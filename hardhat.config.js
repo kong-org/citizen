@@ -10,7 +10,7 @@ require('@openzeppelin/hardhat-upgrades');
 
 
 // TODO: move to .env file
-const INFURA_ROPSTEN_ID = process.env.INFURA_PROJECT_ID;
+const INFURA_ROPSTEN_ID = process.env.INFURA_ROPSTEN_ID;
 const INFURA_MAINNET_ID = process.env.INFURA_MAINNET_ID;
 const ROPSTEN_PRIVATE_KEY = process.env.ROPSTEN_PRIVATE_KEY;
 const MAINNET_PRIVATE_KEY = process.env.MAINNET_PRIVATE_KEY;

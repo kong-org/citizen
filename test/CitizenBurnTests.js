@@ -160,6 +160,18 @@ describe("CitizenBurnTests", function () {
         .withArgs("https://kong.land");      
     }); 
 
+    it("It should change the baseUri as admin and return tokenURI with tokenId.", async function () {
+      // Change baseUri as admin.
+      await expect(CitizenERC721Proxy.updateBaseURI("https://kong.party/"))
+        .to.emit(CitizenERC721Proxy, 'UpdateBaseURI')
+        .withArgs("https://kong.party/");
+
+      await CitizenERC721Proxy.connect(canMint).mint(mintedTo.address);
+      const tokenURI1 = await CitizenERC721Proxy.tokenURI(1);
+      expect(tokenURI1).to.equal("https://kong.party/1");
+
+    }); 
+
     it("It should set registry address as device editor.", async function () {
       // Change baseUri as admin.
       await expect(CitizenERC721Proxy.setRegistryAddress(fakeAddr.address))
@@ -177,11 +189,11 @@ describe("CitizenBurnTests", function () {
     it("It should set device as device editor.", async function () {
       await CitizenERC721Proxy.connect(canMint).mint(mintedTo.address);
       // Change baseUri as admin.
-      await expect(CitizenERC721Proxy.connect(canDeviceEdit).setDevice(0, "0xthisIsADevicePublicKeyHash", "0xthisIsAMerkleRoot"))
+      await expect(CitizenERC721Proxy.connect(canDeviceEdit).setDevice(1, "0xthisIsADevicePublicKeyHash", "0xthisIsAMerkleRoot"))
         .to.emit(CitizenERC721Proxy, 'DeviceSet')
-        .withArgs(0, "0xthisIsADevicePublicKeyHash", "0xthisIsAMerkleRoot");
+        .withArgs(1, "0xthisIsADevicePublicKeyHash", "0xthisIsAMerkleRoot");
 
-      const newDeviceRoot = await CitizenERC721Proxy.deviceRoot(0);
+      const newDeviceRoot = await CitizenERC721Proxy.deviceRoot(1);
       expect(newDeviceRoot).to.equal("0xthisIsAMerkleRoot");
     }); 
 

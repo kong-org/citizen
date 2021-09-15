@@ -35,6 +35,8 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         _setupRole(MINTER_ROLE, msg.sender);
         _setupRole(UPGRADER_ROLE, msg.sender);
         _setupRole(DEVICE_ROLE, msg.sender);
+
+        _tokenIdCounter.increment();
     }
 
     // Allow minters to mint, increment counter. NOTE: it may be desirable to mint the token with device information in one shot.
