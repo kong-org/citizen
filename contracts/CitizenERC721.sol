@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "./extensions/ERC721PhysicalUpgradeable.sol";
+import "./CitizenENSRegistrar.sol";
 
 contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721PhysicalUpgradeable, ERC721BurnableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
@@ -17,13 +18,14 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant DEVICE_ROLE = keccak256("DEVICE_ROLE");
     CountersUpgradeable.Counter private _tokenIdCounter;
+    CitizenENSRegistrar public _ensRegistrar;
 
     // Allow the baseURI to be updated.
     string private _baseUpdateableURI;
 
     event UpdateBaseURI(string baseURI);
 
-    function initialize() initializer public {
+    function initialize(CitizenENSRegistrar ensRegistrar) initializer public {
         __ERC721_init("Kong Land Citizen", "CITIZEN");
         __ERC721Enumerable_init();
         __ERC721Physical_init();
@@ -37,6 +39,7 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         _setupRole(DEVICE_ROLE, msg.sender);
 
         _tokenIdCounter.increment();
+        _ensRegistrar = ensRegistrar;
     }
 
     // Allow minters to mint, increment counter. NOTE: it may be desirable to mint the token with device information in one shot.
@@ -89,6 +92,10 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
     {
         super._beforeTokenTransfer(from, to, tokenId);
+
+        // TODO(@cameron): Is this in the right place?
+        // Transfer the ENS subdomain to the new NFT owner.
+        _ensRegistrar.transfer(tokenId, to);
     }
 
     function supportsInterface(bytes4 interfaceId)
