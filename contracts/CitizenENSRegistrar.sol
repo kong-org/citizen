@@ -50,6 +50,29 @@ contract CitizenENSRegistrar {
 
     // TODO: Function for updating your subdomain.
 
-    // TODO: Admin function when user transfers their NFT.
+    function transfer(uint256 tokenId, address to) public onlyCitizenNFT {
+
+        bytes32 label = _labels[tokenId];
+
+        // Check if a label has been claimed for this tokenId.
+        if (label != bytes32(0)) {
+
+            // If a label has been claimed ...
+            // Transfer ownership of the subdomain.
+            _registry.setSubnodeOwner(_rootNode, label, to);
+
+        }
+
+    }
+
+    modifier onlyCitizenNFT() {
+
+        require(
+            msg.sender == address(_citizen),
+            "Caller is not the CITIZEN NFT."
+        );
+        _;
+
+    }
 
 }
