@@ -69,8 +69,9 @@ contract CitizenENSRegistrar {
         require(_registry.owner(node) == address(0), "The supplied label has already been claimed.");
 
         // Delete the previous subdomain, creating a new one.
-        _registry.setSubnodeOwner(_rootNode, _labels[tokenId], address(0));
-        _registry.setSubnodeOwner(_rootNode, labelNode, msg.sender);
+        _registry.setSubnodeRecord(_rootNode, _labels[tokenId], address(0), address(0), 0);
+        _registry.setSubnodeRecord(_rootNode, labelNode, msg.sender, address(_resolver), 0);
+        _resolver.setAddr(node, msg.sender);
         _labels[tokenId] = labelNode;
 
     }

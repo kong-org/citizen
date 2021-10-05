@@ -75,4 +75,15 @@ describe("CitizenENSTests", () => {
     const address = await ethers.provider.resolveName("john.citizen.eth");
     expect(address).to.equal(await claimer.getAddress());
   });
+
+  it("Update a subdomain.", async () => {
+    await registrar.connect(claimer).update(1, "cameron");
+
+    let address;
+
+    address = await ethers.provider.resolveName("john.citizen.eth");
+    expect(address).to.be.null;
+    address = await ethers.provider.resolveName("cameron.citizen.eth");
+    expect(address).to.equal(await claimer.getAddress());
+  });
 });
