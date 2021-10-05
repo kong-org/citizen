@@ -8,10 +8,9 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import "./extensions/ERC721PhysicalUpgradeable.sol";
-import "./CitizenENSRegistrar.sol";
+import "../extensions/ERC721PhysicalUpgradeable.sol";
 
-contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721PhysicalUpgradeable, ERC721BurnableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
+contract CitizenERC721PreENS is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721PhysicalUpgradeable, ERC721BurnableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -21,10 +20,6 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
 
     // Allow the baseURI to be updated.
     string private _baseUpdateableURI;
-
-    // Custom CITIZEN ENS registrar.
-    // NOTE: Must be placed here, after inherited memory.
-    CitizenENSRegistrar public _ensRegistrar;
 
     event UpdateBaseURI(string baseURI);
 
@@ -49,11 +44,6 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         require(block.timestamp > 1631714400, "Cannot mint yet.");
         _safeMint(to, _tokenIdCounter.current());
         _tokenIdCounter.increment();
-    }
-
-    // Admin only function for setting the ENS registrar.
-    function setRegistrarAddress(CitizenENSRegistrar ensRegistrar) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _ensRegistrar = ensRegistrar;
     }
 
     /**
@@ -99,10 +89,6 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
     {
         super._beforeTokenTransfer(from, to, tokenId);
-
-        // TODO(@cameron): Is this in the right place?
-        // Transfer the ENS subdomain to the new NFT owner.
-        _ensRegistrar.transfer(tokenId, to);
     }
 
     function supportsInterface(bytes4 interfaceId)
