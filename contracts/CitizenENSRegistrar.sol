@@ -2,10 +2,11 @@
 pragma solidity ^0.8.4;
 
 import '@ensdomains/ens-contracts/contracts/registry/ENS.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import './CitizenENSResolver.sol';
 
-contract CitizenENSRegistrar {
+contract CitizenENSRegistrar is Ownable {
 
     ENS public immutable _registry;
     CitizenENSResolver public immutable _resolver;
@@ -16,6 +17,9 @@ contract CitizenENSRegistrar {
 
     // Mapping from token ID to subdomain label
     mapping(uint256 => bytes32) public _labels;
+
+    event Claimed(address owner, string label);
+    event Migrated(address newRegistrar);
 
     constructor(ENS registry, ERC721 citizen, string memory rootName, bytes32 rootNode) {
 
@@ -48,7 +52,10 @@ contract CitizenENSRegistrar {
         _resolver.setAddr(node, msg.sender);
         _labels[tokenId] = labelNode;
 
-        // TODO: Reverse?
+        // TODO: Set the reverse record?
+
+        // Emit an event.
+        emit Claimed(msg.sender, label);
 
     }
 
@@ -94,6 +101,13 @@ contract CitizenENSRegistrar {
             _resolver.setAddr(node, to);
 
         }
+
+    }
+
+    function migrate(address newRegistrar) public onlyOwner {
+
+        _registry.setOwner(_rootNode, newRegistrar);
+        emit Migrated(newRegistrar);
 
     }
 
