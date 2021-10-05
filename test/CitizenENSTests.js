@@ -1,24 +1,47 @@
 const { expect } = require("chai");
 const { ethers, upgrades } = require("hardhat");
+const keccak256 = require("keccak256");
 
 describe("CitizenENSTests", () => {
+  let claimer;
+
   let proxy;
+  let registry;
   let registrar;
 
   before(async () => {
+    const signers = await ethers.getSigners();
+    claimer = signers[1];
+
     // Deploy old CitizenERC721 contract.
     const CitizenERC721PreENS = await ethers.getContractFactory(
       "CitizenERC721PreENS"
     );
     proxy = await upgrades.deployProxy(CitizenERC721PreENS);
 
+    // Deploy registry.
+    const Registry = await ethers.getContractFactory("ENSRegistry");
+    registry = await Registry.deploy();
+
     // Deploy registrar.
     const Registrar = await ethers.getContractFactory("CitizenENSRegistrar");
     registrar = await Registrar.deploy(
-      "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+      registry.address,
       proxy.address,
       "citizen.eth",
       ethers.utils.namehash("citizen.eth")
+    );
+
+    // Setup `citizen.eth`.
+    await registry.setSubnodeOwner(
+      ethers.constants.HashZero,
+      keccak256("eth"),
+      await signers[0].getAddress()
+    );
+    await registry.setSubnodeOwner(
+      ethers.utils.namehash("eth"),
+      keccak256("citizen"),
+      registrar.address
     );
   });
 
@@ -35,5 +58,20 @@ describe("CitizenENSTests", () => {
     await proxy.setRegistrarAddress(registrar.address);
 
     expect(await proxy._ensRegistrar()).to.equal(registrar.address);
+  });
+
+  it("Mint 1 $CITIZEN to the claimer.", async () => {
+    const address = await claimer.getAddress();
+    await proxy.mint(address);
+
+    expect(await proxy.ownerOf(1)).to.equal(address);
+  });
+
+  it("Claim a subdomain.", async () => {
+    await registrar.connect(claimer).claim(1, "john");
+
+    expect(await registrar.labelOwner("john")).to.equal(
+      await claimer.getAddress()
+    );
   });
 });
