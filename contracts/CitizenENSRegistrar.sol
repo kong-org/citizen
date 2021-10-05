@@ -90,17 +90,6 @@ contract CitizenENSRegistrar {
 
     }
 
-    function labelOwner(string calldata label) public view returns (address) {
-
-        // Encode the supplied label.
-        bytes32 labelNode = keccak256(abi.encodePacked(label));
-        bytes32 node = keccak256(abi.encodePacked(_rootNode, labelNode));
-
-        // Return the label owner.
-        return _registry.owner(node);
-
-    }
-
     modifier onlyCitizenNFT() {
 
         require(
