@@ -3,10 +3,12 @@ pragma solidity ^0.8.4;
 
 import '@ensdomains/ens-contracts/contracts/registry/ENS.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import './CitizenENSResolver.sol';
 
 contract CitizenENSRegistrar {
 
     ENS public immutable _registry;
+    CitizenENSResolver public immutable _resolver;
     ERC721 public immutable _citizen;
 
     string public _rootName;  // citizen.eth
@@ -18,6 +20,7 @@ contract CitizenENSRegistrar {
     constructor(ENS registry, ERC721 citizen, string memory rootName, bytes32 rootNode) {
 
         _registry = registry;
+        _resolver = new CitizenENSResolver();
         _citizen = citizen;
 
         _rootName = rootName;
@@ -41,10 +44,11 @@ contract CitizenENSRegistrar {
         require(_registry.owner(node) == address(0), "The supplied label has already been claimed.");
 
         // Create the subdomain.
-        _registry.setSubnodeOwner(_rootNode, labelNode, msg.sender);
+        _registry.setSubnodeRecord(_rootNode, labelNode, msg.sender, address(_resolver), 0);
+        _resolver.setAddr(node, msg.sender);
         _labels[tokenId] = labelNode;
 
-        // TODO: Resolver?
+        // TODO: Reverse?
 
     }
 

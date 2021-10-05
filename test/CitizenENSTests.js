@@ -23,6 +23,8 @@ describe("CitizenENSTests", () => {
     const Registry = await ethers.getContractFactory("ENSRegistry");
     registry = await Registry.deploy();
 
+    ethers.provider.network.ensAddress = registry.address;
+
     // Deploy registrar.
     const Registrar = await ethers.getContractFactory("CitizenENSRegistrar");
     registrar = await Registrar.deploy(
@@ -70,8 +72,7 @@ describe("CitizenENSTests", () => {
   it("Claim a subdomain.", async () => {
     await registrar.connect(claimer).claim(1, "john");
 
-    expect(await registrar.labelOwner("john")).to.equal(
-      await claimer.getAddress()
-    );
+    const address = await ethers.provider.resolveName("john.citizen.eth");
+    expect(address).to.equal(await claimer.getAddress());
   });
 });
