@@ -57,7 +57,7 @@ describe("CitizenENSTests", () => {
   });
 
   it("Set the ENS address.", async () => {
-    await proxy.setRegistrarAddress(registrar.address);
+    await proxy.setENSRegistrarAddress(registrar.address);
 
     expect(await proxy._ensRegistrar()).to.equal(registrar.address);
   });

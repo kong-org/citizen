@@ -52,7 +52,7 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
     }
 
     // Admin only function for setting the ENS registrar.
-    function setRegistrarAddress(CitizenENSRegistrar ensRegistrar) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setENSRegistrarAddress(CitizenENSRegistrar ensRegistrar) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _ensRegistrar = ensRegistrar;
     }
 
