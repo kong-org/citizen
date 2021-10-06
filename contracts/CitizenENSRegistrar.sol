@@ -24,7 +24,7 @@ contract CitizenENSRegistrar is Ownable {
     constructor(ENS registry, ERC721 citizen, string memory rootName, bytes32 rootNode) {
 
         _registry = registry;
-        _resolver = new CitizenENSResolver();
+        _resolver = new CitizenENSResolver(registry);
         _citizen = citizen;
 
         _rootName = rootName;
