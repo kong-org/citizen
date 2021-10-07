@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "compile": "hardhat compile",
+    "deploy:ens": "hardhat run ./scripts/deploy-ens.js",
     "test:ens": "hardhat test ./test/CitizenENSTests.js",
-    "format": "prettier --write ./test/CitizenENSTests.js"
+    "format": "prettier --write ./scripts/deploy-ens.js ./test/CitizenENSTests.js"
   },
   "author": "the printer",
   "license": "ISC",
