@@ -93,12 +93,8 @@ contract CitizenENSRegistrar is Ownable {
         if (label != bytes32(0)) {
 
             // If a label has been claimed ...
-
-            // Encode the label.
-            bytes32 labelNode = keccak256(abi.encodePacked(label));
-            bytes32 node = keccak256(abi.encodePacked(_rootNode, labelNode));
-
             // Transfer ownership of the subdomain.
+            bytes32 node = keccak256(abi.encodePacked(_rootNode, label));
             _registry.setSubnodeOwner(_rootNode, label, to);
             _resolver.setAddr(node, to);
 

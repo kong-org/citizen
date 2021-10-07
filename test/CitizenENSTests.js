@@ -4,6 +4,7 @@ const keccak256 = require("keccak256");
 
 describe("CitizenENSTests", () => {
   let claimer;
+  let secondary;
 
   let proxy;
   let registry;
@@ -14,6 +15,7 @@ describe("CitizenENSTests", () => {
   before(async () => {
     const signers = await ethers.getSigners();
     claimer = signers[1];
+    secondary = signers[2];
 
     // Deploy old CitizenERC721 contract.
     const CitizenERC721PreENS = await ethers.getContractFactory(
@@ -117,5 +119,12 @@ describe("CitizenENSTests", () => {
     expect(address).to.be.null;
     address = await ethers.provider.resolveName("cameron.citizen.eth");
     expect(address).to.equal(await claimer.getAddress());
+  });
+
+  it("Transfer a subdomain.", async () => {
+    await proxy.connect(claimer).transfer(await secondary.getAddress(), 1);
+
+    const address = await ethers.provider.resolveName("cameron.citizen.eth");
+    expect(address).to.equal(await secondary.getAddress());
   });
 });

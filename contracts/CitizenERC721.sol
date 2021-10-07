@@ -56,6 +56,11 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         _ensRegistrar = ensRegistrar;
     }
 
+    // Function to transfer an NFT between wallets.
+    function transfer(address to, uint256 tokenId) public {
+        safeTransferFrom(msg.sender, to, tokenId);
+    }
+
     /**
      * @dev Device specific functions.
      */
