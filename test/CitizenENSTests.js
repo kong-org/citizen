@@ -7,6 +7,8 @@ describe("CitizenENSTests", () => {
 
   let proxy;
   let registry;
+  let reverseResolver;
+  let reverseRegistrar;
   let registrar;
 
   before(async () => {
@@ -34,6 +36,21 @@ describe("CitizenENSTests", () => {
       ethers.utils.namehash("citizen.eth")
     );
 
+    // Deploy default reverse resolver.
+    const DefaultReverseResolver = await ethers.getContractFactory(
+      "DefaultReverseResolver"
+    );
+    reverseResolver = await DefaultReverseResolver.deploy(registry.address);
+
+    // Deploy reverse registrar.
+    const ReverseRegistrar = await ethers.getContractFactory(
+      "ReverseRegistrar"
+    );
+    reverseRegistrar = await ReverseRegistrar.deploy(
+      registry.address,
+      reverseResolver.address
+    );
+
     // Setup `citizen.eth`.
     await registry.setSubnodeOwner(
       ethers.constants.HashZero,
@@ -44,6 +61,18 @@ describe("CitizenENSTests", () => {
       ethers.utils.namehash("eth"),
       keccak256("citizen"),
       registrar.address
+    );
+
+    // Setup `addr.reverse`.
+    await registry.setSubnodeOwner(
+      ethers.constants.HashZero,
+      keccak256("reverse"),
+      await signers[0].getAddress()
+    );
+    await registry.setSubnodeOwner(
+      ethers.utils.namehash("reverse"),
+      keccak256("addr"),
+      reverseRegistrar.address
     );
   });
 
@@ -71,9 +100,12 @@ describe("CitizenENSTests", () => {
 
   it("Claim a subdomain.", async () => {
     await registrar.connect(claimer).claim(1, "john");
+    await reverseRegistrar.connect(claimer).setName("john.citizen.eth");
 
     const address = await ethers.provider.resolveName("john.citizen.eth");
     expect(address).to.equal(await claimer.getAddress());
+    const name = await ethers.provider.lookupAddress(claimer.getAddress());
+    expect(name).to.equal("john.citizen.eth");
   });
 
   it("Update a subdomain.", async () => {

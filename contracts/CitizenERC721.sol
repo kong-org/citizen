@@ -100,7 +100,6 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
     {
         super._beforeTokenTransfer(from, to, tokenId);
 
-        // TODO(@cameron): Is this in the right place?
         // Transfer the ENS subdomain to the new NFT owner.
         _ensRegistrar.transfer(tokenId, to);
     }

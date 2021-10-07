@@ -19,6 +19,7 @@ contract CitizenENSRegistrar is Ownable {
     mapping(uint256 => bytes32) public _labels;
 
     event Claimed(address owner, string label);
+    event Updated(address owner, string label);
     event Migrated(address newRegistrar);
 
     constructor(ENS registry, ERC721 citizen, string memory rootName, bytes32 rootNode) {
@@ -52,14 +53,11 @@ contract CitizenENSRegistrar is Ownable {
         _resolver.setAddr(node, msg.sender);
         _labels[tokenId] = labelNode;
 
-        // TODO: Set the reverse record?
-
         // Emit an event.
         emit Claimed(msg.sender, label);
 
     }
 
-    // TODO: Maybe combine this logic into the claim function?
     function update(uint256 tokenId, string calldata label) public {
 
         // Check that the caller owns the supplied tokenId.
@@ -77,9 +75,13 @@ contract CitizenENSRegistrar is Ownable {
 
         // Delete the previous subdomain, creating a new one.
         _registry.setSubnodeRecord(_rootNode, _labels[tokenId], address(0), address(0), 0);
+        _resolver.setAddr(_labels[tokenId], address(0));
         _registry.setSubnodeRecord(_rootNode, labelNode, msg.sender, address(_resolver), 0);
         _resolver.setAddr(node, msg.sender);
         _labels[tokenId] = labelNode;
+
+        // Emit an event.
+        emit Updated(msg.sender, label);
 
     }
 
