@@ -4,9 +4,12 @@ pragma solidity ^0.8.4;
 import '@ensdomains/ens-contracts/contracts/registry/ENS.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import '@openzeppelin/contracts/utils/Strings.sol';
 import './CitizenENSResolver.sol';
 
 contract CitizenENSRegistrar is Ownable {
+
+    using Strings for uint256;
 
     ENS public immutable _registry;
     CitizenENSResolver public immutable _resolver;
@@ -51,6 +54,7 @@ contract CitizenENSRegistrar is Ownable {
         // Create the subdomain.
         _registry.setSubnodeRecord(_rootNode, labelNode, msg.sender, address(_resolver), 0);
         _resolver.setAddr(node, msg.sender);
+        _resolver.setText(node, "id.citizen", tokenId.toString());
         _labels[tokenId] = labelNode;
 
         // Emit an event.
@@ -76,8 +80,12 @@ contract CitizenENSRegistrar is Ownable {
         // Delete the previous subdomain, creating a new one.
         _registry.setSubnodeRecord(_rootNode, _labels[tokenId], address(0), address(0), 0);
         _resolver.setAddr(_labels[tokenId], address(0));
+        _resolver.setText(_labels[tokenId], "id.citizen", "");
+
         _registry.setSubnodeRecord(_rootNode, labelNode, msg.sender, address(_resolver), 0);
         _resolver.setAddr(node, msg.sender);
+        _resolver.setText(node, "id.citizen", tokenId.toString());
+
         _labels[tokenId] = labelNode;
 
         // Emit an event.

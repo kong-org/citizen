@@ -8,6 +8,7 @@ describe("CitizenENSTests", () => {
 
   let proxy;
   let registry;
+  let resolver;
   let reverseResolver;
   let reverseRegistrar;
   let registrar;
@@ -36,6 +37,13 @@ describe("CitizenENSTests", () => {
       proxy.address,
       "citizen.eth",
       ethers.utils.namehash("citizen.eth")
+    );
+
+    // Configure the resolver.
+    resolver = new ethers.providers.Resolver(
+      ethers.provider,
+      await registrar._resolver(),
+      "john.citizen.eth"
     );
 
     // Deploy default reverse resolver.
@@ -108,6 +116,8 @@ describe("CitizenENSTests", () => {
     expect(address).to.equal(await claimer.getAddress());
     const name = await ethers.provider.lookupAddress(claimer.getAddress());
     expect(name).to.equal("john.citizen.eth");
+    const citizenId = await resolver.getText("id.citizen");
+    expect(citizenId).to.equal("1");
   });
 
   it("Update a subdomain.", async () => {
