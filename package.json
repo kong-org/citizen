@@ -4,7 +4,10 @@
   "description": "kong land $citizen token",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "hardhat compile",
+    "deploy:ens": "hardhat run ./scripts/deploy-ens.js",
+    "test:ens": "hardhat test ./test/CitizenENSTests.js",
+    "format": "prettier --write ./scripts/deploy-ens.js ./test/CitizenENSTests.js"
   },
   "author": "the printer",
   "license": "ISC",
@@ -21,9 +24,11 @@
     "ethers": "^5.4.1",
     "hardhat": "^2.4.3",
     "hardhat-gas-reporter": "^1.0.4",
-    "keccak256": "^1.0.3"
+    "keccak256": "^1.0.3",
+    "prettier": "^2.4.1"
   },
   "dependencies": {
+    "@ensdomains/ens-contracts": "^0.0.7",
     "@openzeppelin/contracts": "^4.2.0"
   }
 }
