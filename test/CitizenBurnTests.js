@@ -40,7 +40,7 @@ describe("CitizenBurnTests", function () {
   beforeEach(async function () {
     // Get the ContractFactory and Signers here.
     CitizenERC20Token = await ethers.getContractFactory("CitizenERC20");
-    CitizenERC721Token = await ethers.getContractFactory("CitizenERC721");
+    CitizenERC721Token = await ethers.getContractFactory("CitizenERC721PreENS");
     BurnContract = await ethers.getContractFactory("BurnMintCitizen");
     [owner, burnerAddr, fakeAddr, canMint, cantMintAddr, mintedTo, canDeviceEdit] = await ethers.getSigners();
 
