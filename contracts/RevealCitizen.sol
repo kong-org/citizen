@@ -59,8 +59,6 @@ contract RevealCitizen {
         // TODO: lookup tokenId, require that the token isn't set yet.
         require(_citizenERC721.deviceId(tokenId).length != 0, "Device already set.");
 
-
-
         // TODO: we write the registry contract address + root (do a get on registry contract to verify)
         // TODO: setDevice in erc721.
         require(_citizenERC721.setDevice(tokenId, publicKeyHash, merkleRoot));
