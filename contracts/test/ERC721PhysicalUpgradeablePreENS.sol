@@ -20,13 +20,15 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
 
     // Struct for minimum device information.
     struct Device { 
-       bytes32 publicKeyHash;
-       bytes32 merkleRoot;
+       string publicKeyHash;
+       string merkleRoot;
     }
 
     // The device registry.
     address public _registryAddress;
-    bytes32 testVar;
+    string testVar;
+    bytes32 testVargain;
+
 
     // Optional mapping for deivce IDs and and device roots.
     mapping(uint256 => Device) private _devices;
@@ -34,27 +36,27 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
     event UpdateRegistry(address registryAddress);
     event DeviceSet(
         uint256 tokenId,
-        bytes32 publicKeyHash,
-        bytes32 merkleRoot
+        string publicKeyHash,
+        string merkleRoot
     );
 
     /**
      * @dev Get a deviceId for a given tokenId.
      */
-    function deviceId(uint256 tokenId) public view virtual returns(bytes32) {
+    function deviceId(uint256 tokenId) public view virtual returns(string memory) {
         require(_exists(tokenId), "Device ID query for nonexistant token");
 
-        bytes32 _deviceId = _devices[tokenId].publicKeyHash;
+        string memory _deviceId = _devices[tokenId].publicKeyHash;
         return _deviceId;
     }
 
     /**
      * @dev Get a deviceRoot for a given tokenId.
      */
-    function deviceRoot(uint256 tokenId) public view virtual returns(bytes32) {
+    function deviceRoot(uint256 tokenId) public view virtual returns(string memory) {
         require(_exists(tokenId), "Device root query for nonexistant token");
 
-        bytes32 _deviceRoot = _devices[tokenId].merkleRoot;
+        string memory _deviceRoot = _devices[tokenId].merkleRoot;
         return _deviceRoot;
     }
 
@@ -69,7 +71,7 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
     /**
      * @dev Set a deviceRoot for a given tokenId.
      */
-    function _setDevice(uint256 tokenId, bytes32 publicKeyHash, bytes32 merkleRoot) internal virtual {
+    function _setDevice(uint256 tokenId, string memory publicKeyHash, string memory merkleRoot) internal virtual {
         require(_exists(tokenId), "Device set for nonexistant token");
         _devices[tokenId].publicKeyHash = publicKeyHash;
         _devices[tokenId].merkleRoot = merkleRoot;
@@ -79,7 +81,7 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
     function _burn(uint256 tokenId) internal virtual override {
         super._burn(tokenId);
 
-        if (_devices[tokenId].publicKeyHash.length != 0) {
+        if (bytes(_devices[tokenId].publicKeyHash).length != 0) {
             delete _devices[tokenId];
         }
     }

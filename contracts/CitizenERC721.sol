@@ -68,7 +68,7 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         _setRegistryAddress(registryAddress);
     }
 
-    function setDevice(uint256 tokenId, string memory publicKeyHash, string memory merkleRoot) public onlyRole(DEVICE_ROLE) {
+    function setDevice(uint256 tokenId, bytes32 publicKeyHash, bytes32 merkleRoot) public onlyRole(DEVICE_ROLE) {
         _setDevice(tokenId, publicKeyHash, merkleRoot);
     }
 
@@ -106,7 +106,9 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         super._beforeTokenTransfer(from, to, tokenId);
 
         // Transfer the ENS subdomain to the new NFT owner.
-        _ensRegistrar.transfer(tokenId, to);
+        if (from != address(0) && to != address(0)) {
+            _ensRegistrar.transfer(tokenId, to);
+        }
     }
 
     function supportsInterface(bytes4 interfaceId)

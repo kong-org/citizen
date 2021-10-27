@@ -27,6 +27,17 @@ describe("CitizenBurnTests", function () {
   let fakeAddr;
   let cantMintAddr;
 
+  let claimer;
+  let secondary;
+  let CitizenERC721Proxy;
+
+  let proxy;
+  let registry;
+  let resolver;
+  let reverseResolver;
+  let reverseRegistrar;
+  let registrar;
+
   // Set up several $CITIZEN conditions.
   var exp = ethers.BigNumber.from("10").pow(18);
   var partialExp = ethers.BigNumber.from("10").pow(17);
@@ -210,6 +221,96 @@ describe("CitizenBurnTests", function () {
       const mockCheck = await upgraded.MOCK_UP.call();
       expect(mockCheck).to.equal("mock_updated");
     });
+
+    it("It should set device after upgrade.", async function () {
+
+      await CitizenERC721Proxy.connect(canMint).mint(mintedTo.address);
+
+      // Deploy registry.
+      const Registry = await ethers.getContractFactory("ENSRegistry");
+      registry = await Registry.deploy();
+
+      ethers.provider.network.ensAddress = registry.address;
+
+      // Deploy registrar.
+      const Registrar = await ethers.getContractFactory("CitizenENSRegistrar");
+      registrar = await Registrar.deploy(
+        registry.address,
+        CitizenERC721Proxy.address,
+        "citizen.eth",
+        ethers.utils.namehash("citizen.eth")
+      );
+
+      // Configure the resolver.
+      resolver = new ethers.providers.Resolver(
+        ethers.provider,
+        await registrar._resolver(),
+        "john.citizen.eth"
+      );
+
+      // Deploy default reverse resolver.
+      const DefaultReverseResolver = await ethers.getContractFactory(
+        "DefaultReverseResolver"
+      );
+      reverseResolver = await DefaultReverseResolver.deploy(registry.address);
+
+      // Deploy reverse registrar.
+      const ReverseRegistrar = await ethers.getContractFactory(
+        "ReverseRegistrar"
+      );
+      reverseRegistrar = await ReverseRegistrar.deploy(
+        registry.address,
+        reverseResolver.address
+      );
+
+      // Setup `citizen.eth`.
+      await registry.setSubnodeOwner(
+        ethers.constants.HashZero,
+        keccak256("eth"),
+        await owner.getAddress()
+      );
+      await registry.setSubnodeOwner(
+        ethers.utils.namehash("eth"),
+        keccak256("citizen"),
+        registrar.address
+      );
+
+      // Setup `addr.reverse`.
+      await registry.setSubnodeOwner(
+        ethers.constants.HashZero,
+        keccak256("reverse"),
+        await owner.getAddress()
+      );
+      await registry.setSubnodeOwner(
+        ethers.utils.namehash("reverse"),
+        keccak256("addr"),
+        reverseRegistrar.address
+      );
+
+      const CitizenERC721ENS = await ethers.getContractFactory("CitizenERC721");
+
+      CitizenERC721Proxy = await upgrades.upgradeProxy(CitizenERC721Proxy.address, CitizenERC721ENS);
+
+      expect(await CitizenERC721Proxy._ensRegistrar()).to.equal(
+        "0x0000000000000000000000000000000000000000"
+      );
+
+      console.log(registry.address)
+      await CitizenERC721Proxy.setENSRegistrarAddress(registry.address);
+      expect(await CitizenERC721Proxy._ensRegistrar()).to.equal(registry.address);
+
+      // const address = await owner.getAddress();
+      // console.log(address)
+      await CitizenERC721Proxy.mint(mintedTo.address);
+
+      // Change baseUri as admin.
+      // await expect(proxy.connect(canDeviceEdit).setDevice(1, "0x4cae5775cdf6aa1ee4fc2edd8caf5737325ef98b1cb5b3c8b1e7a4b5f95f8c7e", "0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b"))
+      //   .to.emit(proxy, 'DeviceSet')
+      //   .withArgs(1, "0x4cae5775cdf6aa1ee4fc2edd8caf5737325ef98b1cb5b3c8b1e7a4b5f95f8c7e", "0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
+
+      // const newDeviceRoot = await proxy.deviceRoot(1);
+      // expect(newDeviceRoot).to.equal("0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
+    });     
   });
 
 });

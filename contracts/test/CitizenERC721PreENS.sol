@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import "../extensions/ERC721PhysicalUpgradeable.sol";
+import "./ERC721PhysicalUpgradeablePreENS.sol";
 
 contract CitizenERC721PreENS is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721PhysicalUpgradeable, ERC721BurnableUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;

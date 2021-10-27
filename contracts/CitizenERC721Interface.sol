@@ -6,8 +6,8 @@ pragma solidity ^0.8.4;
 interface CitizenERC721Interface {
 
   function mint(address recipient) external;
-  function setDevice(uint256 tokenId, string memory publicKeyHash, string memory merkleRoot) external;
-  function deviceRoot(uint256 tokenId) external returns(string memory);
-  function deviceId(uint256 tokenId) external returns(string memory);
+  function setDevice(uint256 tokenId, bytes32 publicKeyHash, bytes32 merkleRoot) external;
+  function deviceRoot(uint256 tokenId) external returns(bytes32);
+  function deviceId(uint256 tokenId) external returns(bytes32);
 
 }

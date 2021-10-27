@@ -24,6 +24,10 @@ describe("CitizenENSTests", () => {
     );
     proxy = await upgrades.deployProxy(CitizenERC721PreENS);
 
+    // Assign roles to mirror deployed CitizenERC721.
+    await proxy.grantRole(keccak256('MINTER_ROLE'), secondary.address);
+    await proxy.grantRole(keccak256('DEVICE_ROLE'), secondary.address);
+
     // Deploy registry.
     const Registry = await ethers.getContractFactory("ENSRegistry");
     registry = await Registry.deploy();
@@ -84,21 +88,11 @@ describe("CitizenENSTests", () => {
       keccak256("addr"),
       reverseRegistrar.address
     );
-  });
 
-  it("Upgrade the ERC721 contract.", async () => {
-    const CitizenERC721 = await ethers.getContractFactory("CitizenERC721");
-    proxy = await upgrades.upgradeProxy(proxy.address, CitizenERC721);
+    // Increase time to be past epoch of 1631714400 -- mirror 
+    // await network.provider.send("evm_increaseTime", [360000])
+    // await network.provider.send("evm_mine")
 
-    expect(await proxy._ensRegistrar()).to.equal(
-      "0x0000000000000000000000000000000000000000"
-    );
-  });
-
-  it("Set the ENS address.", async () => {
-    await proxy.setENSRegistrarAddress(registrar.address);
-
-    expect(await proxy._ensRegistrar()).to.equal(registrar.address);
   });
 
   it("Mint 1 $CITIZEN to the claimer.", async () => {
@@ -107,6 +101,50 @@ describe("CitizenENSTests", () => {
 
     expect(await proxy.ownerOf(1)).to.equal(address);
   });
+
+  it("Add a first device.", async () => {
+    await expect(proxy.setDevice(1, "0x4cae5775cdf6aa1ee4fc2edd8caf5737325ef98b1cb5b3c8b1e7a4b5f95f8c7e", "0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b"))
+      .to.emit(proxy, 'DeviceSet')
+      .withArgs(1, "0x4cae5775cdf6aa1ee4fc2edd8caf5737325ef98b1cb5b3c8b1e7a4b5f95f8c7e", "0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
+
+    const newDeviceRoot = await proxy.deviceRoot(1);
+    expect(newDeviceRoot).to.equal("0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
+  })
+
+  it("Upgrade the ERC721 contract.", async () => {
+    const CitizenERC721 = await ethers.getContractFactory("CitizenERC721");
+    proxy = await upgrades.upgradeProxy(proxy.address, CitizenERC721);
+
+    expect(await proxy._ensRegistrar()).to.equal(
+      "0x0000000000000000000000000000000000000000"
+    );
+
+    await proxy.grantRole(keccak256('MINTER_ROLE'), secondary.address);
+    await proxy.grantRole(keccak256('DEVICE_ROLE'), secondary.address);
+
+  });
+
+  it("Set the ENS address.", async () => {
+    await proxy.connect(secondary).setENSRegistrarAddress(registrar.address);
+
+    expect(await proxy._ensRegistrar()).to.equal(registrar.address);
+  });
+
+  it("Mint 1 $CITIZEN to the claimer.", async () => {
+    const address = await claimer.getAddress();
+    await proxy.connect(secondary).mint(address);
+
+    expect(await proxy.ownerOf(2)).to.equal(address);
+  });
+
+  it("Add a second device.", async () => {
+    await expect(proxy.setDevice(2, "0x5cae5775cdf6aa1ee4fc2edd8caf5737325ef98b1cb5b3c8b1e7a4b5f95f8c7e", "0x5972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b"))
+      .to.emit(proxy, 'DeviceSet')
+      .withArgs(2, "0x5cae5775cdf6aa1ee4fc2edd8caf5737325ef98b1cb5b3c8b1e7a4b5f95f8c7e", "0x5972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
+
+    const newDeviceRoot = await proxy.deviceRoot(2);
+    expect(newDeviceRoot).to.equal("0x5972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
+  })
 
   it("Claim a subdomain.", async () => {
     await registrar.connect(claimer).claim(1, "john");
