@@ -5,6 +5,8 @@ import "./CitizenERC721.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "hardhat/console.sol";
+
 contract RevealCitizen is Ownable {
 
     using ECDSA for bytes32;
@@ -15,96 +17,83 @@ contract RevealCitizen is Ownable {
     // TODO: read from registry (?) or registry oracle
 
     // TODO: oracle capable of verifying P256 signatures.
-    address revealOracleAddr;
+    address public _revealOracleAddr;
 
     constructor (CitizenERC721 citizenERC721) public {
         _citizenERC721 = citizenERC721;
     }
 
     event RevealOracleAddress(
-        address revealOracleAddr
+        address _revealOracleAddr
     );
 
     // Reveal indicates that the Passport has been associated and can be used to verify oracle.
     event Reveal(
         uint256 tokenId,
-        bytes32 publicKeyHash,
+        uint256 primaryPublicKeyX,
+        uint256 primaryPublicKeyY,
         uint256 r,
         uint256 s, 
-        uint256 primaryPublicKeyX,
-        uint256 primaryPublicKeyY
+        bytes32 blockhash
     );
 
     function updateRevealAddr(address newAddr) public onlyOwner {
-        revealOracleAddr = newAddr;
-        emit RevealOracleAddress(revealOracleAddr);
+        _revealOracleAddr = newAddr;
+        emit RevealOracleAddress(_revealOracleAddr);
     }
 
-
+    // Verify the oracleSignature.
     function _verify(bytes32 data, bytes memory signature, address account) internal pure returns (bool) {
         return data
             .toEthSignedMessageHash()
             .recover(signature) == account;
     }
 
-    // TODO: update registry, review which components are needed for verify.
-    // TODO: oracleSignature
+    // Set the device and reveal NFT after an oracle has verfied the P256 signature from the device.
     function revealOracle(uint256 tokenId, 
                           uint[2] memory rs, 
                           uint256 primaryPublicKeyX,
                           uint256 primaryPublicKeyY, 
-                          uint256 blockNumber,
-                          bytes32 merkleRoot, 
+                          bytes32 blockhash,
+                          string memory merkleRoot, 
                           bytes memory oracleSignature) external {
         
         address from = msg.sender;
 
         // Only the holder of the token can execute this contract.
-        require(_citizenERC721.ownerOf(tokenId) == from);
+        require(_citizenERC721.ownerOf(tokenId) == from, "Only token holder can reveal.");
 
-        // TODO: lookup tokenId, require that the token isn't set yet.
-        require(_citizenERC721.deviceId(tokenId).length != 0, "Device already set.");
+        // Lookup tokenId, require that the token isn't set yet.
+        require(bytes(_citizenERC721.deviceId(tokenId)).length == 0, "Device already set.");
 
-        // SHA256 hash of primary public key.
+        // SHA256 hash of the device's primary public key.
         bytes32 publicKeyHash = sha256(abi.encodePacked(primaryPublicKeyX, primaryPublicKeyY));
+        // console.logBytes32(publicKeyHash);
 
         // Hash of the signature from the Passport.
         bytes32 signatureHash = sha256(abi.encodePacked(rs));
+        // console.logBytes32(signatureHash);
 
-        // Hash of the Passport holder address.
-        bytes32 passportHolderAddrHash = sha256(abi.encodePacked(from));
+        // Hash of the Passport holder address and blockhash.
+        bytes32 passportHolderAddrHash = sha256(abi.encodePacked(from, blockhash));
+        // console.logBytes32(passportHolderAddrHash);
 
         // Hash of the Passport address hash and the primaryPublicKeyHash; this is what the oracle signed.
         bytes32 oracleHash = sha256(abi.encodePacked(publicKeyHash, signatureHash, passportHolderAddrHash));
+        // console.logBytes32(oracleHash);
 
         // Signature from the revealOracle indicating that verification of the P256 signature completed successfully.
-        require(_verify(oracleHash, oracleSignature, revealOracleAddr));
+        require(_verify(oracleHash, oracleSignature, _revealOracleAddr), "Verify failed.");
 
-        // TODO: we write the registry contract address + root (do a get on registry contract to verify)
-        // TODO: setDevice in erc721.
-        _citizenERC721.setDevice(tokenId, publicKeyHash, merkleRoot);
+        // setDevice in erc721.
+        _citizenERC721.setDevice(tokenId, string(publicKeyHash), merkleRoot);
 
-        // TODO: emit reveal event with signature; we then hash with blockhash XX blocks later to reveal
-        emit Reveal(tokenId, publicKeyHash, rs[0], rs[1], primaryPublicKeyX, primaryPublicKeyY);
+        // Note: the registry address is implicit against what is in CitizenERC721. Reveal information should
+        // allow for honesty check of oracle. rs will be hashed with subsequent block to reveal.
+        emit Reveal(tokenId, primaryPublicKeyX, primaryPublicKeyY, rs[0], rs[1], blockhash);
         
     }
 
-    // TODO: mirror w/registry + elliptic curve verify
-    // function reveal(uint256 tokenId, 
-    //                 uint[2] memory rs, 
-    //                 uint[2] memory Q, 
-    //                 uint256 blockNumber, 
-    //                 bytes32[] memory proof, 
-    //                 bytes32 merkleRoot, 
-    //                 bytes32 hardwareHash) external {
+    // TODO: reveal function w/registry + elliptic curve to verify onchain. Estimated at 1-2 million gas.
 
-    //     // TODO: verify only if no oracle sig.
-    //     // We need to (1) get the proof from IPFS, (2) the device root from contract, (3) the hardwareHash
-    //     // bytes32[] memory proof, 
-    //     // bytes32 root, 
-    //     // bytes32 hardwareHash, 
-    //     // uint256 kongAmount
-    //     // verifyProof(proof, r.deviceRoot, hardwareHash, 0)
-
-    // }
 }

@@ -1,10 +1,14 @@
 const { expect } = require("chai");
 const { ethers, upgrades } = require("hardhat");
 const keccak256 = require("keccak256");
+const crypto = require('crypto');
+
+const { signMessage } = require('./helpers/signer');
 
 describe("CitizenENSTests", () => {
   let claimer;
   let secondary;
+  let oracle;
 
   let proxy;
   let registry;
@@ -17,6 +21,8 @@ describe("CitizenENSTests", () => {
     const signers = await ethers.getSigners();
     claimer = signers[1];
     secondary = signers[2];
+    tertiary = signers[3];
+    oracle = signers[4];
 
     // Deploy old CitizenERC721 contract.
     const CitizenERC721PreENS = await ethers.getContractFactory(
@@ -26,6 +32,8 @@ describe("CitizenENSTests", () => {
 
     // Assign roles to mirror deployed CitizenERC721.
     await proxy.grantRole(keccak256('MINTER_ROLE'), secondary.address);
+
+    // NOTE: this role is reserved for reveal contract, for regression testing here.
     await proxy.grantRole(keccak256('DEVICE_ROLE'), secondary.address);
 
     // Deploy registry.
@@ -118,19 +126,15 @@ describe("CitizenENSTests", () => {
     expect(await proxy._ensRegistrar()).to.equal(
       "0x0000000000000000000000000000000000000000"
     );
-
-    await proxy.grantRole(keccak256('MINTER_ROLE'), secondary.address);
-    await proxy.grantRole(keccak256('DEVICE_ROLE'), secondary.address);
-
   });
 
   it("Set the ENS address.", async () => {
-    await proxy.connect(secondary).setENSRegistrarAddress(registrar.address);
+    await proxy.setENSRegistrarAddress(registrar.address);
 
     expect(await proxy._ensRegistrar()).to.equal(registrar.address);
   });
 
-  it("Mint 1 $CITIZEN to the claimer.", async () => {
+  it("Mint a second $CITIZEN to the claimer.", async () => {
     const address = await claimer.getAddress();
     await proxy.connect(secondary).mint(address);
 
@@ -145,6 +149,13 @@ describe("CitizenENSTests", () => {
     const newDeviceRoot = await proxy.deviceRoot(2);
     expect(newDeviceRoot).to.equal("0x5972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
   })
+
+  it("Mint third $CITIZEN to the tertiary.", async () => {
+    const address = await tertiary.getAddress();
+    await proxy.connect(secondary).mint(address);
+
+    expect(await proxy.ownerOf(3)).to.equal(address);
+  });
 
   it("Claim a subdomain.", async () => {
     await registrar.connect(claimer).claim(1, "john");
@@ -175,4 +186,75 @@ describe("CitizenENSTests", () => {
     const address = await ethers.provider.resolveName("cameron.citizen.eth");
     expect(address).to.equal(await secondary.getAddress());
   });
+
+  it("It should deploy reveal and add device role, oracle address.", async function () {
+    // Deploy reveal contract.
+    const Reveal = await ethers.getContractFactory("RevealCitizen");
+    reveal = await Reveal.deploy(proxy.address);
+
+    // Grant reveal contract the ability to set and remove devices.
+    await proxy.grantRole(keccak256('DEVICE_ROLE'), reveal.address);
+
+    // Setup the oracle address.
+    await reveal.updateRevealAddr(oracle.address);
+    
+    // Verify the oracle address has been set.
+    address = await reveal._revealOracleAddr.call();
+    expect(address).to.equal(oracle.address);
+  });
+
+  it("It should verify on valid oracle.", async function () {
+    // Curve and key objects.
+    curve = crypto.createECDH('prime256v1');
+    curve.generateKeys();
+    publicKey = [
+      '0x' + curve.getPublicKey('hex').slice(2, 66),
+      '0x' + curve.getPublicKey('hex').slice(-64)
+    ];
+    console.log(publicKey);
+
+    // Get block.
+    let block = await ethers.provider.getBlock('latest');
+
+    // Generate a signature using the simulated public key; important only for non-oracle verify testing.
+    let device = await signMessage(curve, block.hash)
+
+    // TODO: hash public key, hash signature, hash addr of burner
+    let revealerAddressHash = ethers.utils.sha256(tertiary.address + block.hash.slice(2));
+    let publicKeyHash = ethers.utils.sha256(device.pubkeyX + device.pubkeyY.slice(2));
+    let signatureHash = ethers.utils.sha256(device.rs[0] + device.rs[1].slice(2));
+
+    let merkleRoot = '0x' + crypto.randomBytes(32).toString('hex').toLowerCase();
+
+    console.log(`pubkeyhash: ${publicKeyHash}`);
+    console.log(`signatureHash: ${signatureHash}`)
+    console.log(`reveal ethers: ${revealerAddressHash}`)
+
+    // Generate hash, sign using tertiary key.
+    let oracleHash = ethers.utils.sha256(publicKeyHash + signatureHash.slice(2) + revealerAddressHash.slice(2));
+    let oracleSignature = await oracle.signMessage(ethers.utils.arrayify(oracleHash));
+
+    console.log(`oracleHash: ${oracleHash}`)
+    console.log(`oracleSignature: ${oracleSignature}`)
+    console.log(`oracleAddr: ${oracle.address}`)
+
+    // Link the Passport device to the $CITIZEN token by verifying a signature from the device.
+    await expect(reveal.connect(tertiary).revealOracle(3, device.rs, device.pubkeyX, device.pubkeyY, block.hash, merkleRoot, oracleSignature))
+      .to.emit(reveal, 'Reveal')
+      .withArgs(3, device.pubkeyX, device.pubkeyY, device.rs[0], device.rs[1], block.hash);
+
+    // event Reveal(
+    //     uint256 tokenId,
+    //     uint256 primaryPublicKeyX,
+    //     uint256 primaryPublicKeyY,
+    //     uint256 r,
+    //     uint256 s, 
+    //     bytes32 blockhash
+    // );
+
+    // Verify the device has been set.
+    console.log(await proxy.deviceRoot(3))
+    // expect(await proxy.deviceId(3)).to.equal(publicKeyHash);
+  });
+
 });

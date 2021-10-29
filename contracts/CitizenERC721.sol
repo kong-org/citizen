@@ -68,7 +68,7 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         _setRegistryAddress(registryAddress);
     }
 
-    function setDevice(uint256 tokenId, bytes32 publicKeyHash, bytes32 merkleRoot) public onlyRole(DEVICE_ROLE) {
+    function setDevice(uint256 tokenId, string memory publicKeyHash, string memory merkleRoot) public onlyRole(DEVICE_ROLE) {
         _setDevice(tokenId, publicKeyHash, merkleRoot);
     }
 

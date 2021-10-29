@@ -26,9 +26,6 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
 
     // The device registry.
     address public _registryAddress;
-    string testVar;
-    bytes32 testVargain;
-
 
     // Optional mapping for deivce IDs and and device roots.
     mapping(uint256 => Device) private _devices;
