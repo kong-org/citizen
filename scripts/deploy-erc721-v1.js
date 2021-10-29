@@ -3,7 +3,7 @@ const keccak256 = require('keccak256');
 const CITIZEN_ERC20_MAINNET = "0x77f0cc420dea0ae726db6bef1460a4b69176a8ea"
 const CITIZEN_ERC20_ROPSTEN = "0x4e4c7051ecce3985403be5c551c55b716ddbf2ab"
 
-var CitizenERC20Address = CITIZEN_ERC20_MAINNET;
+var CitizenERC20Address = CITIZEN_ERC20_ROPSTEN;
 
 async function main() {
   const [deployer] = await ethers.getSigners();
