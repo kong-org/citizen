@@ -55,7 +55,7 @@ contract RevealCitizen is Ownable {
                           uint256 primaryPublicKeyX,
                           uint256 primaryPublicKeyY, 
                           bytes32 blockhash,
-                          string memory merkleRoot, 
+                          bytes32 merkleRoot, 
                           bytes memory oracleSignature) external {
         
         address from = msg.sender;
@@ -64,7 +64,7 @@ contract RevealCitizen is Ownable {
         require(_citizenERC721.ownerOf(tokenId) == from, "Only token holder can reveal.");
 
         // Lookup tokenId, require that the token isn't set yet.
-        require(bytes(_citizenERC721.deviceId(tokenId)).length == 0, "Device already set.");
+        require(_citizenERC721.deviceId(tokenId) == 0, "Device already set.");
 
         // SHA256 hash of the device's primary public key.
         bytes32 publicKeyHash = sha256(abi.encodePacked(primaryPublicKeyX, primaryPublicKeyY));
@@ -86,7 +86,7 @@ contract RevealCitizen is Ownable {
         require(_verify(oracleHash, oracleSignature, _revealOracleAddr), "Verify failed.");
 
         // setDevice in erc721.
-        _citizenERC721.setDevice(tokenId, string(publicKeyHash), merkleRoot);
+        _citizenERC721.setDevice(tokenId, publicKeyHash, merkleRoot);
 
         // Note: the registry address is implicit against what is in CitizenERC721. Reveal information should
         // allow for honesty check of oracle. rs will be hashed with subsequent block to reveal.

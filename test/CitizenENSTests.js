@@ -219,42 +219,25 @@ describe("CitizenENSTests", () => {
     // Generate a signature using the simulated public key; important only for non-oracle verify testing.
     let device = await signMessage(curve, block.hash)
 
-    // TODO: hash public key, hash signature, hash addr of burner
+    // Hash public key, hash signature, hash addr of burner
     let revealerAddressHash = ethers.utils.sha256(tertiary.address + block.hash.slice(2));
     let publicKeyHash = ethers.utils.sha256(device.pubkeyX + device.pubkeyY.slice(2));
     let signatureHash = ethers.utils.sha256(device.rs[0] + device.rs[1].slice(2));
 
+    // Generate a random string to represent merkleRoot.
     let merkleRoot = '0x' + crypto.randomBytes(32).toString('hex').toLowerCase();
-
-    console.log(`pubkeyhash: ${publicKeyHash}`);
-    console.log(`signatureHash: ${signatureHash}`)
-    console.log(`reveal ethers: ${revealerAddressHash}`)
 
     // Generate hash, sign using tertiary key.
     let oracleHash = ethers.utils.sha256(publicKeyHash + signatureHash.slice(2) + revealerAddressHash.slice(2));
     let oracleSignature = await oracle.signMessage(ethers.utils.arrayify(oracleHash));
-
-    console.log(`oracleHash: ${oracleHash}`)
-    console.log(`oracleSignature: ${oracleSignature}`)
-    console.log(`oracleAddr: ${oracle.address}`)
 
     // Link the Passport device to the $CITIZEN token by verifying a signature from the device.
     await expect(reveal.connect(tertiary).revealOracle(3, device.rs, device.pubkeyX, device.pubkeyY, block.hash, merkleRoot, oracleSignature))
       .to.emit(reveal, 'Reveal')
       .withArgs(3, device.pubkeyX, device.pubkeyY, device.rs[0], device.rs[1], block.hash);
 
-    // event Reveal(
-    //     uint256 tokenId,
-    //     uint256 primaryPublicKeyX,
-    //     uint256 primaryPublicKeyY,
-    //     uint256 r,
-    //     uint256 s, 
-    //     bytes32 blockhash
-    // );
-
     // Verify the device has been set.
-    console.log(await proxy.deviceRoot(3))
-    // expect(await proxy.deviceId(3)).to.equal(publicKeyHash);
+    expect(await proxy.deviceId(3)).to.equal(publicKeyHash);
   });
 
 });

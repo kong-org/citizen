@@ -20,10 +20,10 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
 
     // Struct for minimum device information.
     struct Device { 
-       string publicKeyHash;
-       string merkleRoot;
+       string publicKeyHashString;
+       string merkleRootString;
        bytes32 publicKeyHash;
-       bytes32 merkleRoo;
+       bytes32 merkleRoot;
     }
 
     // The device registry.
