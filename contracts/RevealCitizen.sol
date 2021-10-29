@@ -12,11 +12,6 @@ contract RevealCitizen is Ownable {
     using ECDSA for bytes32;
 
     CitizenERC721 public _citizenERC721;
-
-    // TODO: emit reveal event
-    // TODO: read from registry (?) or registry oracle
-
-    // TODO: oracle capable of verifying P256 signatures.
     address public _revealOracleAddr;
 
     constructor (CitizenERC721 citizenERC721) public {

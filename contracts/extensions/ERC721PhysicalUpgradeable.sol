@@ -18,7 +18,7 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
     }
     using StringsUpgradeable for uint256;    
 
-    // Struct for minimum device information.
+    // Struct for minimum device information. String vars in struct are legacy and only for backwards compatibility.
     struct Device { 
        string publicKeyHashString;
        string merkleRootString;

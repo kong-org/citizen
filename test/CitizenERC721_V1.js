@@ -26,6 +26,7 @@ describe("CitizenBurnTests", function () {
   let burnerAddr;
   let fakeAddr;
   let cantMintAddr;
+  let canDeviceEdit;
 
   let claimer;
   let secondary;
@@ -222,6 +223,7 @@ describe("CitizenBurnTests", function () {
       expect(mockCheck).to.equal("mock_updated");
     });
 
+    // NOTE: below is a V1 to V2 upgrade test, retained here for regression testing. See CitizenERC721_V2 for comprehensive V2 tests.
     it("It should set device after upgrade.", async function () {
 
       await CitizenERC721Proxy.connect(canMint).mint(mintedTo.address);
@@ -295,21 +297,18 @@ describe("CitizenBurnTests", function () {
         "0x0000000000000000000000000000000000000000"
       );
 
-      console.log(registry.address)
       await CitizenERC721Proxy.setENSRegistrarAddress(registry.address);
       expect(await CitizenERC721Proxy._ensRegistrar()).to.equal(registry.address);
 
-      // const address = await owner.getAddress();
-      // console.log(address)
+      // Mint a device.
       await CitizenERC721Proxy.mint(mintedTo.address);
 
-      // Change baseUri as admin.
-      // await expect(proxy.connect(canDeviceEdit).setDevice(1, "0x4cae5775cdf6aa1ee4fc2edd8caf5737325ef98b1cb5b3c8b1e7a4b5f95f8c7e", "0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b"))
-      //   .to.emit(proxy, 'DeviceSet')
-      //   .withArgs(1, "0x4cae5775cdf6aa1ee4fc2edd8caf5737325ef98b1cb5b3c8b1e7a4b5f95f8c7e", "0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
+      // Set a device.
+      await expect(CitizenERC721Proxy.connect(canDeviceEdit).setDevice(1, "0x4cae5775cdf6aa1ee4fc2edd8caf5737325ef98b1cb5b3c8b1e7a4b5f95f8c7e", "0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b"))
+        .to.emit(CitizenERC721Proxy, 'DeviceSet')
+        .withArgs(1, "0x4cae5775cdf6aa1ee4fc2edd8caf5737325ef98b1cb5b3c8b1e7a4b5f95f8c7e", "0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
 
-      // const newDeviceRoot = await proxy.deviceRoot(1);
-      // expect(newDeviceRoot).to.equal("0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
+      expect(await proxy.deviceRoot(1)).to.equal("0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
     });     
   });
 
