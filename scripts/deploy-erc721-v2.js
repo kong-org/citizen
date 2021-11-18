@@ -6,7 +6,7 @@ const CITIZEN_ERC721_ROPSTEN = "0xd431b82796865F396e28d0f56b6a3d6626268A6e";
 
 // WARNING: to test on Ropsten, it is recommended to first get a fresh .test domain using the deployer account.
 const CITIZEN_ENS_MAINNET = "citizen.eth"
-const CITIZEN_ENS_ROPSTEN = "kong.test"
+const CITIZEN_ENS_ROPSTEN = "sup.test"
 
 // Set your network here.
 var CitizenERC721Address = CITIZEN_ERC721_ROPSTEN;
@@ -28,7 +28,7 @@ const main = async () => {
     "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
     CitizenERC721Address,
     CitizenENS,
-    ethers.utils.namehash("citizen.test")
+    ethers.utils.namehash(CitizenENS)
   );
 
   // Transfer `citizen.eth` to the registrar.
@@ -50,7 +50,7 @@ const main = async () => {
   const reveal = await RevealCitizen.deploy(CitizenERC721Address);
 
   // Add a role granding device capability to RevealCitizen.
-  await nft.grantRole(keccak256('DEVICE_ROLE'), RevealCitizen.address);  
+  await nft.grantRole(keccak256('DEVICE_ROLE'), reveal.address);  
 
   // TODO: set oracle address.
 

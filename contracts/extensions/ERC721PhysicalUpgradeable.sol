@@ -20,10 +20,10 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
 
     // Struct for minimum device information. String vars in struct are legacy and only for backwards compatibility.
     struct Device { 
-       string publicKeyHashString;
-       string merkleRootString;
-       bytes32 publicKeyHash;
-       bytes32 merkleRoot;
+       string publicKeyHash;
+       string merkleRoot;
+       bytes32 publicKeyHashBytes;
+       bytes32 merkleRootBytes;
     }
 
     // The device registry.
@@ -45,7 +45,7 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
     function deviceId(uint256 tokenId) public view virtual returns(bytes32) {
         require(_exists(tokenId), "Device ID query for nonexistant token");
 
-        bytes32 _deviceId = _devices[tokenId].publicKeyHash;
+        bytes32 _deviceId = _devices[tokenId].publicKeyHashBytes;
         return _deviceId;
     }
 
@@ -55,7 +55,7 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
     function deviceRoot(uint256 tokenId) public view virtual returns(bytes32) {
         require(_exists(tokenId), "Device root query for nonexistant token");
 
-        bytes32 _deviceRoot = _devices[tokenId].merkleRoot;
+        bytes32 _deviceRoot = _devices[tokenId].merkleRootBytes;
         return _deviceRoot;
     }
 
@@ -72,15 +72,15 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
      */
     function _setDevice(uint256 tokenId, bytes32 publicKeyHash, bytes32 merkleRoot) internal virtual {
         require(_exists(tokenId), "Device set for nonexistant token");
-        _devices[tokenId].publicKeyHash = publicKeyHash;
-        _devices[tokenId].merkleRoot = merkleRoot;
+        _devices[tokenId].publicKeyHashBytes = publicKeyHash;
+        _devices[tokenId].merkleRootBytes = merkleRoot;
         emit DeviceSet(tokenId, publicKeyHash, merkleRoot);
     }
 
     function _burn(uint256 tokenId) internal virtual override {
         super._burn(tokenId);
 
-        if (_devices[tokenId].publicKeyHash.length != 0) {
+        if (_devices[tokenId].publicKeyHashBytes.length != 0) {
             delete _devices[tokenId];
         }
     }

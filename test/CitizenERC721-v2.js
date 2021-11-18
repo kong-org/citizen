@@ -216,11 +216,12 @@ describe("CitizenENSTests", () => {
     // Get block.
     let block = await ethers.provider.getBlock('latest');
 
-    // Generate a signature using the simulated public key; important only for non-oracle verify testing.
-    let device = await signMessage(curve, block.hash)
-
     // Hash public key, hash signature, hash addr of burner
     let revealerAddressHash = ethers.utils.sha256(tertiary.address + block.hash.slice(2));
+
+    // Generate a signature using the simulated public key; important only for non-oracle verify testing.
+    let device = await signMessage(curve, revealerAddressHash)
+
     let publicKeyHash = ethers.utils.sha256(device.pubkeyX + device.pubkeyY.slice(2));
     let signatureHash = ethers.utils.sha256(device.rs[0] + device.rs[1].slice(2));
 
@@ -232,12 +233,14 @@ describe("CitizenENSTests", () => {
     let oracleSignature = await oracle.signMessage(ethers.utils.arrayify(oracleHash));
 
     // Link the Passport device to the $CITIZEN token by verifying a signature from the device.
-    await expect(reveal.connect(tertiary).revealOracle(3, device.rs, device.pubkeyX, device.pubkeyY, block.hash, merkleRoot, oracleSignature))
+    await expect(reveal.connect(tertiary).revealOracle(3, device.rs, device.pubkeyX, device.pubkeyY, block.number, merkleRoot, oracleSignature))
       .to.emit(reveal, 'Reveal')
-      .withArgs(3, device.pubkeyX, device.pubkeyY, device.rs[0], device.rs[1], block.hash);
+      .withArgs(3, device.pubkeyX, device.pubkeyY, device.rs[0], device.rs[1], block.number);
 
     // Verify the device has been set.
     expect(await proxy.deviceId(3)).to.equal(publicKeyHash);
+
+    console.log(ethers.utils.namehash('sup.test'))
   });
 
 });

@@ -308,7 +308,7 @@ describe("CitizenBurnTests", function () {
         .to.emit(CitizenERC721Proxy, 'DeviceSet')
         .withArgs(1, "0x4cae5775cdf6aa1ee4fc2edd8caf5737325ef98b1cb5b3c8b1e7a4b5f95f8c7e", "0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
 
-      expect(await proxy.deviceRoot(1)).to.equal("0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
+      expect(await CitizenERC721Proxy.deviceRoot(1)).to.equal("0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
     });     
   });
 

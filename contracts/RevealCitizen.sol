@@ -29,7 +29,7 @@ contract RevealCitizen is Ownable {
         uint256 primaryPublicKeyY,
         uint256 r,
         uint256 s, 
-        bytes32 blockhash
+        uint256 blockNumber
     );
 
     function updateRevealAddr(address newAddr) public onlyOwner {
@@ -49,7 +49,7 @@ contract RevealCitizen is Ownable {
                           uint[2] memory rs, 
                           uint256 primaryPublicKeyX,
                           uint256 primaryPublicKeyY, 
-                          bytes32 blockhash,
+                          uint256 blockNumber,
                           bytes32 merkleRoot, 
                           bytes memory oracleSignature) external {
         
@@ -65,16 +65,8 @@ contract RevealCitizen is Ownable {
         bytes32 publicKeyHash = sha256(abi.encodePacked(primaryPublicKeyX, primaryPublicKeyY));
         // console.logBytes32(publicKeyHash);
 
-        // Hash of the signature from the Passport.
-        bytes32 signatureHash = sha256(abi.encodePacked(rs));
-        // console.logBytes32(signatureHash);
-
-        // Hash of the Passport holder address and blockhash.
-        bytes32 passportHolderAddrHash = sha256(abi.encodePacked(from, blockhash));
-        // console.logBytes32(passportHolderAddrHash);
-
-        // Hash of the Passport address hash and the primaryPublicKeyHash; this is what the oracle signed.
-        bytes32 oracleHash = sha256(abi.encodePacked(publicKeyHash, signatureHash, passportHolderAddrHash));
+        // Hash of the Passport holder's address, the blockhash and the primaryPublicKeyHash; this is what the oracle signed.
+        bytes32 oracleHash = sha256(abi.encodePacked(publicKeyHash, sha256(abi.encodePacked(rs)), sha256(abi.encodePacked(from, blockhash(blockNumber)))));
         // console.logBytes32(oracleHash);
 
         // Signature from the revealOracle indicating that verification of the P256 signature completed successfully.
@@ -85,7 +77,7 @@ contract RevealCitizen is Ownable {
 
         // Note: the registry address is implicit against what is in CitizenERC721. Reveal information should
         // allow for honesty check of oracle. rs will be hashed with subsequent block to reveal.
-        emit Reveal(tokenId, primaryPublicKeyX, primaryPublicKeyY, rs[0], rs[1], blockhash);
+        emit Reveal(tokenId, primaryPublicKeyX, primaryPublicKeyY, rs[0], rs[1], blockNumber);
         
     }
 
