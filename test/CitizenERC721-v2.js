@@ -203,7 +203,7 @@ describe("CitizenENSTests", () => {
     expect(address).to.equal(oracle.address);
   });
 
-  it("It should verify on valid oracle.", async function () {
+  it("It should fail to verify before a CID is set.", async function () {
     // Curve and key objects.
     curve = crypto.createECDH('prime256v1');
     curve.generateKeys();
@@ -211,7 +211,43 @@ describe("CitizenENSTests", () => {
       '0x' + curve.getPublicKey('hex').slice(2, 66),
       '0x' + curve.getPublicKey('hex').slice(-64)
     ];
-    console.log(publicKey);
+
+    // Get block.
+    let block = await ethers.provider.getBlock('latest');
+
+    // Hash public key, hash signature, hash addr of burner
+    let revealerAddressHash = ethers.utils.sha256(tertiary.address + block.hash.slice(2));
+
+    // Generate a signature using the simulated public key; important only for non-oracle verify testing.
+    let device = await signMessage(curve, revealerAddressHash)
+
+    let publicKeyHash = ethers.utils.sha256(device.pubkeyX + device.pubkeyY.slice(2));
+    let signatureHash = ethers.utils.sha256(device.rs[0] + device.rs[1].slice(2));
+
+    // Generate a random string to represent merkleRoot.
+    let merkleRoot = '0x' + crypto.randomBytes(32).toString('hex').toLowerCase();
+
+    // Generate hash, sign using tertiary key.
+    let oracleHash = ethers.utils.sha256(publicKeyHash + signatureHash.slice(2) + revealerAddressHash.slice(2));
+    let oracleSignature = await oracle.signMessage(ethers.utils.arrayify(oracleHash));
+
+    // Link the Passport device to the $CITIZEN token by verifying a signature from the device.
+    await expect(reveal.connect(tertiary).revealOracle(3, device.rs, device.pubkeyX, device.pubkeyY, block.number, merkleRoot, oracleSignature))
+      .to.be.revertedWith("Cannot mint yet, token attributes not set.");
+
+  });
+
+  it("It should verify on valid oracle.", async function () {
+    // Setup the reveal attributes.
+    await reveal.updateRevealCid('QmagtqYd6D2cNHudEJQnNNNS9DTnACwjLSBJoHXea9QXaq');
+
+    // Curve and key objects.
+    curve = crypto.createECDH('prime256v1');
+    curve.generateKeys();
+    publicKey = [
+      '0x' + curve.getPublicKey('hex').slice(2, 66),
+      '0x' + curve.getPublicKey('hex').slice(-64)
+    ];
 
     // Get block.
     let block = await ethers.provider.getBlock('latest');
@@ -239,8 +275,6 @@ describe("CitizenENSTests", () => {
 
     // Verify the device has been set.
     expect(await proxy.deviceId(3)).to.equal(publicKeyHash);
-
-    console.log(ethers.utils.namehash('sup.test'))
   });
 
 });

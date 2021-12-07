@@ -10,3 +10,7 @@ Learn more at https://kong.land/.
 
 1. `npm i`
 2. `npx hardhat test`
+
+### Note
+
+If you encounter the error `Error: error:0308010C:digital envelope routines::unsupported`, you many need to set a Node flag: `export SET NODE_OPTIONS=--openssl-legacy-provider`.

@@ -11,12 +11,21 @@ contract RevealCitizen is Ownable {
 
     using ECDSA for bytes32;
 
-    CitizenERC721 public _citizenERC721;
+    CitizenERC721 public _revealERC721;
+
+    // The reveal oracle verifies signatures offchain.
     address public _revealOracleAddr;
 
+    // The reveal CID is an IPFS document containing a distribution of the NFTs yet to be revealed.
+    string public _revealCid;
+
     constructor (CitizenERC721 citizenERC721) public {
-        _citizenERC721 = citizenERC721;
+        _revealERC721 = citizenERC721;
     }
+
+    event RevealCid(
+        string _revealCid
+    );
 
     event RevealOracleAddress(
         address _revealOracleAddr
@@ -32,6 +41,13 @@ contract RevealCitizen is Ownable {
         uint256 blockNumber
     );
 
+    // IPFS CID containing the attributes to be distributed.
+    function updateRevealCid(string memory newCid) public onlyOwner {
+        _revealCid = newCid;
+        emit RevealCid(_revealCid);
+    }
+
+    // Address of the oracle signer.
     function updateRevealAddr(address newAddr) public onlyOwner {
         _revealOracleAddr = newAddr;
         emit RevealOracleAddress(_revealOracleAddr);
@@ -55,11 +71,14 @@ contract RevealCitizen is Ownable {
         
         address from = msg.sender;
 
-        // Only the holder of the token can execute this contract.
-        require(_citizenERC721.ownerOf(tokenId) == from, "Only token holder can reveal.");
+        // The reveal CID must be set for minting to open.
+        require(bytes(_revealCid).length > 0, "Cannot mint yet, token attributes not set.");
 
-        // Lookup tokenId, require that the token isn't set yet.
-        require(_citizenERC721.deviceId(tokenId) == 0, "Device already set.");
+        // Only the holder of the token can execute this contract.
+        require(_revealERC721.ownerOf(tokenId) == from, "Only token holder can reveal.");
+
+        // Lookup tokenId, require that the device isn't set on the token yet.
+        require(_revealERC721.deviceId(tokenId) == 0, "Device already set.");
 
         // SHA256 hash of the device's primary public key.
         bytes32 publicKeyHash = sha256(abi.encodePacked(primaryPublicKeyX, primaryPublicKeyY));
@@ -73,7 +92,7 @@ contract RevealCitizen is Ownable {
         require(_verify(oracleHash, oracleSignature, _revealOracleAddr), "Verify failed.");
 
         // setDevice in erc721.
-        _citizenERC721.setDevice(tokenId, publicKeyHash, merkleRoot);
+        _revealERC721.setDevice(tokenId, publicKeyHash, merkleRoot);
 
         // Note: the registry address is implicit against what is in CitizenERC721. Reveal information should
         // allow for honesty check of oracle. rs will be hashed with subsequent block to reveal.
