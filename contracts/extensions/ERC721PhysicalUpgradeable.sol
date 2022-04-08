@@ -29,7 +29,7 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
     // The device registry.
     address public _registryAddress;
 
-    // Optional mapping for deivce IDs and and device roots.
+    // Optional mapping for device IDs and and device roots.
     mapping(uint256 => Device) private _devices;
 
     event UpdateRegistry(address registryAddress);
@@ -60,6 +60,16 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
     }
 
     /**
+     * @dev Optional: Get a tokenId for a given publicKeyHash.
+     */
+    function tokenByDevice(bytes32 publicKeyHash) public view virtual returns(uint256) {
+        require(_exists(_tokensWithDevices[publicKeyHash]), "Token query for nonexistant device");
+
+        uint256 tokenId = _tokensWithDevices[publicKeyHash];
+        return tokenId;
+    }
+
+    /**
      * @dev Set token-wide registry address.
      */
     function _setRegistryAddress(address registryAddress) internal virtual {
@@ -71,9 +81,11 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
      * @dev Set a deviceRoot for a given tokenId.
      */
     function _setDevice(uint256 tokenId, bytes32 publicKeyHash, bytes32 merkleRoot) internal virtual {
-        require(_exists(tokenId), "Device set for nonexistant token");
+        require(_exists(tokenId), "Device set called for nonexistant token");
+        require(_tokensWithDevices[publicKeyHash] == 0 || _tokensWithDevices[publicKeyHash] == tokenId, "Device already set for another token");
         _devices[tokenId].publicKeyHashBytes = publicKeyHash;
         _devices[tokenId].merkleRootBytes = merkleRoot;
+        _tokensWithDevices[publicKeyHash] = tokenId;
         emit DeviceSet(tokenId, publicKeyHash, merkleRoot);
     }
 
@@ -82,7 +94,13 @@ abstract contract ERC721PhysicalUpgradeable is Initializable, ERC721Upgradeable 
 
         if (_devices[tokenId].publicKeyHashBytes.length != 0) {
             delete _devices[tokenId];
+            delete _tokensWithDevices[_devices[tokenId].publicKeyHashBytes];
         }
     }
-    uint256[47] private __gap;
+
+    // Optional mapping from token ID to device publicKeyHashes
+    mapping(bytes32 => uint256) private _tokensWithDevices;    
+
+    // Verify gap?
+    uint256[46] private __gap;
 }

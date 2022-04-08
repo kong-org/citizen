@@ -4,7 +4,7 @@ const CITIZEN_ERC20_MAINNET = "0x77f0cc420dea0ae726db6bef1460a4b69176a8ea"
 const CITIZEN_ERC20_ROPSTEN = "0x4e4c7051ecce3985403be5c551c55b716ddbf2ab"
 const CITIZEN_ERC20_RINKEBY = "0x0403f5D6E8E1Bdf8F827A0d70ea733CFC10E19E4"
 
-var CitizenERC20Address = CITIZEN_ERC20_RINKEBY;
+var CitizenERC20Address = CITIZEN_ERC20_ROPSTEN;
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -19,7 +19,7 @@ async function main() {
   // CitizenERC20Address = CitizenERC20.address;
 
   // Deploy the base contracts.
-  const CitizenERC721Token = await ethers.getContractFactory("CitizenERC721");
+  const CitizenERC721Token = await ethers.getContractFactory("CitizenERC721PreENS");
   const BurnContract = await ethers.getContractFactory("BurnMintCitizen");
 
   CitizenERC721Proxy = await upgrades.deployProxy(CitizenERC721Token);

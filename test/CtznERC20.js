@@ -148,13 +148,21 @@ describe("CtznERC20", function () {
 
   it("Claim should work under 178", async function () {
 
-    await erc20.connect(claimer).claim(5);
+    await erc20.connect(claimer).claim(178);
 
     const claimerBalance = await erc20.balanceOf(claimer.address);
     expect( claimerBalance.toHexString() ).to.equal( '0x1bc16d674ec80000' );
   });  
 
+  it("Only token holder can claim.", async function () {
+    await expect(erc20.connect(secondary).claim(178)).to.be.revertedWith("Only token holder can claim.");
+  }); 
+
   it("Claim should not work over 178", async function () {
     await expect(erc20.connect(secondary).claim(179)).to.be.revertedWith("Only token holder 178 or lower can claim.");
   });   
+
+  it("Can only claim once", async function () {
+    await expect(erc20.connect(claimer).claim(178)).to.be.revertedWith("Already claimed.");
+  }); 
 });

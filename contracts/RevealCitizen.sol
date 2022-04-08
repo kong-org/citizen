@@ -78,7 +78,7 @@ contract RevealCitizen is Ownable {
         require(_revealERC721.ownerOf(tokenId) == from, "Only token holder can reveal.");
 
         // Lookup tokenId, require that the device isn't set on the token yet.
-        require(_revealERC721.deviceId(tokenId) == 0, "Device already set.");
+        require(_revealERC721.deviceId(tokenId) == 0, "Device already set for this token.");
 
         // SHA256 hash of the device's primary public key.
         bytes32 publicKeyHash = sha256(abi.encodePacked(primaryPublicKeyX, primaryPublicKeyY));

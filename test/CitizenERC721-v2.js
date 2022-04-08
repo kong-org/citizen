@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const { signMessage } = require('./helpers/signer');
 
 describe("CitizenENSTests", () => {
+  let owner;
   let claimer;
   let secondary;
   let oracle;
@@ -17,18 +18,36 @@ describe("CitizenENSTests", () => {
   let reverseRegistrar;
   let registrar;
 
+  let curve;
+  let publicKey;
+
   before(async () => {
     const signers = await ethers.getSigners();
+    owner = signers[0];
     claimer = signers[1];
     secondary = signers[2];
     tertiary = signers[3];
     oracle = signers[4];
+
+    // Create a device
+    curve = crypto.createECDH('prime256v1');
+    curve.generateKeys();
+    publicKey = [
+      '0x' + curve.getPublicKey('hex').slice(2, 66),
+      '0x' + curve.getPublicKey('hex').slice(-64)
+    ];
+
+
 
     // Deploy old CitizenERC721 contract.
     const CitizenERC721PreENS = await ethers.getContractFactory(
       "CitizenERC721PreENS"
     );
     proxy = await upgrades.deployProxy(CitizenERC721PreENS);
+
+    // Deploy $CTZN an burn contract
+    CtznERC20Token = await ethers.getContractFactory("CtznERC20");
+    CtznERC20 = await CtznERC20Token.deploy(proxy.address);
 
     // Assign roles to mirror deployed CitizenERC721.
     await proxy.grantRole(keccak256('MINTER_ROLE'), secondary.address);
@@ -134,11 +153,54 @@ describe("CitizenENSTests", () => {
     expect(await proxy._ensRegistrar()).to.equal(registrar.address);
   });
 
+  it("Deploy BurnMintCTZN.", async () => {
+    
+    const BurnContract = await ethers.getContractFactory("BurnMintCtzn");
+    BurnMintCtzn = await BurnContract.deploy(CtznERC20.address, proxy.address);
+
+    // Grant minting rights
+    await proxy.grantRole(keccak256('MINTER_ROLE'), BurnMintCtzn.address);
+
+    address = await BurnMintCtzn._ctznERC20.call();
+    expect(address).to.equal(CtznERC20.address);
+  })
+
   it("Mint a second $CITIZEN to the claimer.", async () => {
     const address = await claimer.getAddress();
     await proxy.connect(secondary).mint(address);
 
     expect(await proxy.ownerOf(2)).to.equal(address);
+  });
+
+  it("Mint a $CITIZEN > 501 to the claimer.", async () => {
+    const address = await claimer.getAddress();
+    await proxy.connect(secondary).mintCitizen(address);
+
+    expect(await proxy.ownerOf(501)).to.equal(address);
+  });
+
+  it("Mint a $CTZN to a $CITIZEN.", async () => {
+    await CtznERC20.connect(claimer).claim(2);
+
+    let ctznBalance = await CtznERC20.balanceOf(claimer.address)
+    expect(ctznBalance == 2 * 10 ** 18);
+  });
+
+  it("Burn a $CTZN to mint $CITIZEN to the claimer.", async () => {
+    const address = await claimer.getAddress();
+
+    let ctznBurnAmount = BigInt(1 * 10 ** 18)
+
+    // Aprrove to burn and burn.
+    await CtznERC20.connect(claimer).approve(BurnMintCtzn.address, ctznBurnAmount);
+    await BurnMintCtzn.connect(claimer).burnTokenToMint();
+
+    // Verify $CTZN was minted.
+    expect(await proxy.ownerOf(502)).to.equal(address);
+ 
+    // Verify balance decreased by 1.
+    let ctznBalance = await CtznERC20.balanceOf(claimer.address)
+    expect(ctznBalance == 1 * 10 ** 18);
   });
 
   it("Add a second device.", async () => {
@@ -150,11 +212,14 @@ describe("CitizenENSTests", () => {
     expect(newDeviceRoot).to.equal("0x5972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
   })
 
-  it("Mint third $CITIZEN to the tertiary.", async () => {
+  it("Mint third and fourth $CITIZEN to the tertiary.", async () => {
     const address = await tertiary.getAddress();
     await proxy.connect(secondary).mint(address);
 
+    await proxy.connect(secondary).mint(address);
+
     expect(await proxy.ownerOf(3)).to.equal(address);
+    expect(await proxy.ownerOf(4)).to.equal(address);
   });
 
   it("Claim a subdomain.", async () => {
@@ -241,13 +306,13 @@ describe("CitizenENSTests", () => {
     // Setup the reveal attributes.
     await reveal.updateRevealCid('QmagtqYd6D2cNHudEJQnNNNS9DTnACwjLSBJoHXea9QXaq');
 
-    // Curve and key objects.
-    curve = crypto.createECDH('prime256v1');
-    curve.generateKeys();
-    publicKey = [
-      '0x' + curve.getPublicKey('hex').slice(2, 66),
-      '0x' + curve.getPublicKey('hex').slice(-64)
-    ];
+    // // Curve and key objects.
+    // curve = crypto.createECDH('prime256v1');
+    // curve.generateKeys();
+    // publicKey = [
+    //   '0x' + curve.getPublicKey('hex').slice(2, 66),
+    //   '0x' + curve.getPublicKey('hex').slice(-64)
+    // ];
 
     // Get block.
     let block = await ethers.provider.getBlock('latest');
@@ -275,6 +340,41 @@ describe("CitizenENSTests", () => {
 
     // Verify the device has been set.
     expect(await proxy.deviceId(3)).to.equal(publicKeyHash);
+  });
+
+  it("It should fail if already revealed.", async function () {
+
+    // Get block.
+    let block = await ethers.provider.getBlock('latest');
+
+    // Hash public key, hash signature, hash addr of burner
+    let revealerAddressHash = ethers.utils.sha256(tertiary.address + block.hash.slice(2));
+
+    // Generate a signature using the simulated public key; important only for non-oracle verify testing.
+    let device = await signMessage(curve, revealerAddressHash)
+
+    let publicKeyHash = ethers.utils.sha256(device.pubkeyX + device.pubkeyY.slice(2));
+    let signatureHash = ethers.utils.sha256(device.rs[0] + device.rs[1].slice(2));
+
+    // Generate a random string to represent merkleRoot.
+    let merkleRoot = '0x' + crypto.randomBytes(32).toString('hex').toLowerCase();
+
+    // Generate hash, sign using tertiary key.
+    let oracleHash = ethers.utils.sha256(publicKeyHash + signatureHash.slice(2) + revealerAddressHash.slice(2));
+    let oracleSignature = await oracle.signMessage(ethers.utils.arrayify(oracleHash));
+
+    // Link the Passport device to the $CITIZEN token by verifying a signature from the device.
+    await expect(reveal.connect(tertiary).revealOracle(4, device.rs, device.pubkeyX, device.pubkeyY, block.number, merkleRoot, oracleSignature))
+      .to.be.revertedWith("Device already set for another token");
+
+  });
+
+  it("It should get token by deviceId.", async function () {
+
+    let publicKeyHash = ethers.utils.sha256(publicKey[0] + publicKey[1].slice(2));
+
+    expect(await proxy.tokenByDevice(publicKeyHash)).to.equal(3);
+
   });
 
 });

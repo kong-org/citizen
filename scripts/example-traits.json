@@ -1,0 +1,21 @@
+{
+    "nft": [
+      {
+        "nonce": "c3ea57f4a6ba995dc7edc2e24f1687fadceb92f6e0513287e6bdd02f807ceca1",
+        "tokenAddress": "0xc8b3EAD0d32E793D6549E6898b1F9e5078D9bAc2",
+        "attributes": [
+          {
+            "statue": "Apollo",
+            "halo": "GoldHalo",
+            "material": "Aquamarine",
+            "lighting": "Gold",
+            "earrings": "None",
+            "tattoos": "None"
+          }
+        ],
+        "filename": "Jupiter_4",
+        "name": null,
+        "description": null
+      }
+    ]
+  }

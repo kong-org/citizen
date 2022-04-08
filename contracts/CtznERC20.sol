@@ -11,11 +11,12 @@ contract CtznERC20 is ERC20, ERC20Burnable {
     CitizenERC721 public _citizenERC721;
 
     // Mapping for claim status token.
-    mapping(address => bool) public _claimedERC721;
+    mapping(uint256 => bool) public _claimedERC721;
 
+    // Mint the balance to Safe.
     constructor(CitizenERC721 citizenERC721) ERC20('KONG Land Citizenship', 'CTZN') {
         _citizenERC721 = citizenERC721;
-        _mint(msg.sender, 4644 * 10 ** 18);
+        _mint(0xbdC95cA05cC25342Ae9A96FB12Cbe937Efe2e28C, 4644 * 10 ** 18);
     }
 
     function claim(uint256 tokenId) external {
@@ -28,7 +29,10 @@ contract CtznERC20 is ERC20, ERC20Burnable {
         require(_citizenERC721.ownerOf(tokenId) == from, "Only token holder can claim.");
 
         // Verify that this token has not minted yet.
-        require(_claimedERC721[from] == false, 'Already claimed.');
+        require(_claimedERC721[tokenId] == false, 'Already claimed.');
+
+        // Set that this token has been claimed.
+        _claimedERC721[tokenId] = true;
 
         _mint(msg.sender, 2 * 10 ** 18);
     }

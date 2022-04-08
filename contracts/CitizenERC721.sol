@@ -26,6 +26,8 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
     // NOTE: Must be placed here, after inherited memory.
     CitizenENSRegistrar public _ensRegistrar;
 
+    CountersUpgradeable.Counter private _tokenIdCitizen;
+
     event UpdateBaseURI(string baseURI);
 
     function initialize() initializer public {
@@ -41,14 +43,23 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         _setupRole(UPGRADER_ROLE, msg.sender);
         _setupRole(DEVICE_ROLE, msg.sender);
 
+        // tokenIdCounter is for Alpha burns < 500.
         _tokenIdCounter.increment();
     }
 
     // Allow minters to mint, increment counter. NOTE: it may be desirable to mint the token with device information in one shot.
     function mint(address to) public onlyRole(MINTER_ROLE) {
         require(block.timestamp > 1631714400, "Cannot mint yet.");
+        require(_tokenIdCounter.current() < 501, "Cannot mint greater than 500 Alpha's.");
         _safeMint(to, _tokenIdCounter.current());
         _tokenIdCounter.increment();
+    }
+
+    // Allow minters to mint, increment counter. NOTE: it may be desirable to mint the token with device information in one shot.
+    function mintCitizen(address to) public onlyRole(MINTER_ROLE) {
+        // We always start other burns at >= 501.
+        _safeMint(to, _tokenIdCitizen.current() + 501);
+        _tokenIdCitizen.increment();
     }
 
     // Admin only function for setting the ENS registrar.
@@ -71,6 +82,8 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
     function setDevice(uint256 tokenId, bytes32 publicKeyHash, bytes32 merkleRoot) public onlyRole(DEVICE_ROLE) {
         _setDevice(tokenId, publicKeyHash, merkleRoot);
     }
+
+    // TODO: why does this need to be reset on every upgrade?
 
     /**
      * @dev Override baseURI to modify.
