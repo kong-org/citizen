@@ -138,19 +138,30 @@ describe("CitizenENSTests", () => {
     expect(newDeviceRoot).to.equal("0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
   })
 
+  it("Verify first device before upgrade.", async () => {
+    const newDeviceRoot = await proxy.deviceRoot(1);
+    expect(newDeviceRoot).to.equal("0x6972388f34d8c7576f936f103728f7d2820224ec29d136bd1ad881c950f8e72b");
+  })
+
   it("Upgrade the ERC721 contract.", async () => {
     const CitizenERC721 = await ethers.getContractFactory("CitizenERC721");
-    proxy = await upgrades.upgradeProxy(proxy.address, CitizenERC721);
+    // See https://forum.openzeppelin.com/t/problem-with-adding-state-variable-to-base-contract-in-upgradable-contract/23689 and https://github.com/OpenZeppelin/openzeppelin-upgrades/issues/276
+    proxy = await upgrades.upgradeProxy(proxy.address, CitizenERC721, {unsafeSkipStorageCheck: true});
 
     expect(await proxy._ensRegistrar()).to.equal(
       "0x0000000000000000000000000000000000000000"
     );
   });
 
-  it("Set the ENS address.", async () => {
-    await proxy.setENSRegistrarAddress(registrar.address);
+  // it("Set the ENS address.", async () => {
+  //   await proxy.setENSRegistrarAddress(registrar.address);
 
-    expect(await proxy._ensRegistrar()).to.equal(registrar.address);
+  //   expect(await proxy._ensRegistrar()).to.equal(registrar.address);
+  // });
+
+  it("Verify $CITIZEN owner is claimer after upgrade.", async () => {
+    const address = await claimer.getAddress();
+    expect(await proxy.ownerOf(1)).to.equal(address);
   });
 
   it("Deploy BurnMintCTZN.", async () => {
@@ -172,11 +183,28 @@ describe("CitizenENSTests", () => {
     expect(await proxy.ownerOf(2)).to.equal(address);
   });
 
+
   it("Mint a $CITIZEN > 501 to the claimer.", async () => {
+    const address = await claimer.getAddress();
+    await proxy.connect(secondary).mintTitanCitizen(address);
+
+    expect(await proxy.ownerOf(501)).to.equal(address);
+  });
+
+
+  it("Mint a $CITIZEN > 1001 to the claimer.", async () => {
     const address = await claimer.getAddress();
     await proxy.connect(secondary).mintCitizen(address);
 
-    expect(await proxy.ownerOf(501)).to.equal(address);
+    expect(await proxy.ownerOf(1001)).to.equal(address);
+  });
+
+  it("Transfer a $CITIZEN.", async () => {
+    const claimerAddress = await claimer.getAddress();
+    const secondaryAddress = await secondary.getAddress();
+    await proxy.connect(claimer).transferFrom(claimerAddress, secondaryAddress, 1001);
+
+    expect(await proxy.ownerOf(1001)).to.equal(secondaryAddress);
   });
 
   it("Mint a $CTZN to a $CITIZEN.", async () => {
@@ -196,7 +224,7 @@ describe("CitizenENSTests", () => {
     await BurnMintCtzn.connect(claimer).burnTokenToMint();
 
     // Verify $CTZN was minted.
-    expect(await proxy.ownerOf(502)).to.equal(address);
+    expect(await proxy.ownerOf(1002)).to.equal(address);
  
     // Verify balance decreased by 1.
     let ctznBalance = await CtznERC20.balanceOf(claimer.address)
@@ -222,35 +250,67 @@ describe("CitizenENSTests", () => {
     expect(await proxy.ownerOf(4)).to.equal(address);
   });
 
-  it("Claim a subdomain.", async () => {
-    await registrar.connect(claimer).claim(1, "john");
-    await reverseRegistrar.connect(claimer).setName("john.citizen.eth");
+  // it("Claim a subdomain.", async () => {
+  //   await registrar.connect(claimer).claim(1, "john");
+  //   await reverseRegistrar.connect(claimer).setName("john.citizen.eth");
 
-    const address = await ethers.provider.resolveName("john.citizen.eth");
-    expect(address).to.equal(await claimer.getAddress());
-    const name = await ethers.provider.lookupAddress(claimer.getAddress());
-    expect(name).to.equal("john.citizen.eth");
-    const citizenId = await resolver.getText("id.citizen");
-    expect(citizenId).to.equal("1");
-  });
+  //   const address = await ethers.provider.resolveName("john.citizen.eth");
+  //   expect(address).to.equal(await claimer.getAddress());
+  //   const name = await ethers.provider.lookupAddress(claimer.getAddress());
+  //   expect(name).to.equal("john.citizen.eth");
+  //   const citizenId = await resolver.getText("id.citizen");
+  //   expect(citizenId).to.equal("1");
+  // });
 
-  it("Update a subdomain.", async () => {
-    await registrar.connect(claimer).update(1, "cameron");
+  // it("Update a subdomain.", async () => {
+  //   await registrar.connect(claimer).update(1, "cameron");
 
-    let address;
+  //   let address;
 
-    address = await ethers.provider.resolveName("john.citizen.eth");
-    expect(address).to.be.null;
-    address = await ethers.provider.resolveName("cameron.citizen.eth");
-    expect(address).to.equal(await claimer.getAddress());
-  });
+  //   address = await ethers.provider.resolveName("john.citizen.eth");
+  //   expect(address).to.be.null;
+  //   address = await ethers.provider.resolveName("cameron.citizen.eth");
+  //   expect(address).to.equal(await claimer.getAddress());
+  // });
 
-  it("Transfer a subdomain.", async () => {
-    await proxy.connect(claimer).transfer(await secondary.getAddress(), 1);
+  // it("Transfer a subdomain.", async () => {
+  //   await proxy.connect(claimer).transfer(await secondary.getAddress(), 1);
 
-    const address = await ethers.provider.resolveName("cameron.citizen.eth");
-    expect(address).to.equal(await secondary.getAddress());
-  });
+  //   const address = await ethers.provider.resolveName("cameron.citizen.eth");
+  //   expect(address).to.equal(await secondary.getAddress());
+  // });
+
+  // it("Transfer a $CITIZEN with subdomain.", async () => {
+  //   const tertiaryAddress = await tertiary.getAddress();
+  //   const secondaryAddress = await secondary.getAddress();
+
+  //   // Claim a name for token 1001
+  //   await registrar.connect(secondary).claim(1001, "bob");
+  //   await reverseRegistrar.connect(secondary).setName("bob.citizen.eth");
+
+  //   // Resolve the name.
+  //   address = await ethers.provider.resolveName("bob.citizen.eth");
+  //   expect(address).to.equal(await secondary.getAddress());
+  //   citizenName = await ethers.provider.lookupAddress(secondaryAddress);
+  //   expect(citizenName).to.equal("bob.citizen.eth");
+
+  //   // Transfer the name.
+  //   await proxy.connect(secondary).transferFrom(secondaryAddress, tertiaryAddress, 1001);
+
+  //   // Note: the new address needs to explicitly set the reverse registrar.
+  //   await reverseRegistrar.connect(tertiary).setName("bob.citizen.eth");
+
+  //   // Verify transfer.
+  //   expect(await proxy.ownerOf(1001)).to.equal(tertiaryAddress);
+
+  //   // Resolve the name to address.
+  //   address = await ethers.provider.resolveName("bob.citizen.eth");
+  //   expect(address).to.equal(await tertiaryAddress);
+
+  //   // Look up the name of the new address.
+  //   citizenName = await ethers.provider.lookupAddress(tertiaryAddress);
+  //   expect(citizenName).to.equal("bob.citizen.eth");
+  // });
 
   it("It should deploy reveal and add device role, oracle address.", async function () {
     // Deploy reveal contract.

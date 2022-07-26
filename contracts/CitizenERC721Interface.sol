@@ -7,6 +7,7 @@ interface CitizenERC721Interface {
 
   function mint(address recipient) external;
   function mintCitizen(address recipient) external;
+  function mintCitizenTitan(address recipient) external;
   function setDevice(uint256 tokenId, bytes32 publicKeyHash, bytes32 merkleRoot) external;
   function deviceRoot(uint256 tokenId) external returns(bytes32);
   function deviceId(uint256 tokenId) external returns(bytes32);

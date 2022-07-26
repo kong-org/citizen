@@ -25,7 +25,9 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
     // Custom CITIZEN ENS registrar.
     // NOTE: Must be placed here, after inherited memory.
     CitizenENSRegistrar public _ensRegistrar;
+    bool private ensRegistrySet;
 
+    CountersUpgradeable.Counter private _tokenIdTitan;
     CountersUpgradeable.Counter private _tokenIdCitizen;
 
     event UpdateBaseURI(string baseURI);
@@ -50,21 +52,30 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
     // Allow minters to mint, increment counter. NOTE: it may be desirable to mint the token with device information in one shot.
     function mint(address to) public onlyRole(MINTER_ROLE) {
         require(block.timestamp > 1631714400, "Cannot mint yet.");
-        require(_tokenIdCounter.current() < 501, "Cannot mint greater than 500 Alpha's.");
+        require(_tokenIdCounter.current() < 501, "Cannot mint greater than 500 Alphas.");
         _safeMint(to, _tokenIdCounter.current());
         _tokenIdCounter.increment();
     }
 
     // Allow minters to mint, increment counter. NOTE: it may be desirable to mint the token with device information in one shot.
-    function mintCitizen(address to) public onlyRole(MINTER_ROLE) {
+    function mintTitanCitizen(address to) public onlyRole(MINTER_ROLE) {
         // We always start other burns at >= 501.
-        _safeMint(to, _tokenIdCitizen.current() + 501);
+        require(_tokenIdTitan.current() < 1001, "Cannot mint greater than 500 Titans.");
+        _safeMint(to, _tokenIdTitan.current() + 501);
+        _tokenIdTitan.increment();
+    }
+
+    // Allow minters to mint, increment counter. NOTE: it may be desirable to mint the token with device information in one shot.
+    function mintCitizen(address to) public onlyRole(MINTER_ROLE) {
+        // We always start other burns at >= 1001.
+        _safeMint(to, _tokenIdCitizen.current() + 1001);
         _tokenIdCitizen.increment();
     }
 
     // Admin only function for setting the ENS registrar.
     function setENSRegistrarAddress(CitizenENSRegistrar ensRegistrar) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _ensRegistrar = ensRegistrar;
+        ensRegistrySet = true;
     }
 
     // Function to transfer an NFT between wallets.
@@ -119,7 +130,7 @@ contract CitizenERC721 is Initializable, ERC721Upgradeable, ERC721EnumerableUpgr
         super._beforeTokenTransfer(from, to, tokenId);
 
         // Transfer the ENS subdomain to the new NFT owner.
-        if (from != address(0) && to != address(0)) {
+        if (from != address(0) && to != address(0) && ensRegistrySet) {
             _ensRegistrar.transfer(tokenId, to);
         }
     }

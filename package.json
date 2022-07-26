@@ -12,31 +12,30 @@
   "author": "the printer",
   "license": "ISC",
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.2",
-    "@nomiclabs/hardhat-etherscan": "^2.1.6",
-    "@nomiclabs/hardhat-waffle": "^2.0.1",
-    "@openzeppelin/contracts": "^4.3.1",
-    "@openzeppelin/contracts-upgradeable": "^4.3.1",
-    "@openzeppelin/hardhat-upgrades": "^1.10.0",
-    "@openzeppelin/test-helpers": "^0.5.12",
-    "chai": "^4.3.4",
+    "@nomiclabs/hardhat-ethers": "^2.0.5",
+    "@nomiclabs/hardhat-etherscan": "^2.1.8",
+    "@nomiclabs/hardhat-waffle": "^2.0.3",
+    "@openzeppelin/contracts": "^4.5.0",
+    "@openzeppelin/contracts-upgradeable": "^4.5.2",
+    "@openzeppelin/hardhat-upgrades": "^1.17.0",
+    "@openzeppelin/test-helpers": "^0.5.15",
+    "chai": "^4.3.6",
     "dotenv": "^10.0.0",
     "ec-pem": "^0.18.0",
-    "ethereum-waffle": "^3.4.0",
-    "ethers": "^5.4.1",
+    "ethereum-waffle": "^3.4.4",
+    "ethers": "^5.6.4",
     "files-from-path": "^0.2.6",
     "fs": "0.0.1-security",
-    "hardhat": "^2.8.0",
-    "hardhat-gas-reporter": "^1.0.4",
-    "keccak256": "^1.0.3",
+    "hardhat": "^2.9.3",
+    "hardhat-gas-reporter": "^1.0.8",
+    "keccak256": "^1.0.6",
     "mime": "^3.0.0",
-    "nft.storage": "^6.1.0",
+    "nft.storage": "^6.2.0",
     "path": "^0.12.7",
-    "prettier": "^2.4.1"
+    "prettier": "^2.6.2"
   },
   "dependencies": {
     "@ensdomains/ens-contracts": "^0.0.7",
-    "@openzeppelin/contracts": "^4.2.0",
-    "ethereumjs-util": "^7.1.3"
+    "ethereumjs-util": "^7.1.4"
   }
 }

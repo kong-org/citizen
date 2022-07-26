@@ -100,6 +100,4 @@ contract RevealCitizen is Ownable {
         
     }
 
-    // TODO: reveal function w/registry + elliptic curve to verify onchain. Estimated at 1-2 million gas.
-
 }
